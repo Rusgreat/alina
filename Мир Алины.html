@@ -1,0 +1,574 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Мир Алины</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&family=Pixelify+Sans:wght@500;700&display=swap">
+<style>
+/* Layout: one column, hero with channel button, game shelf (paper house game full width, star catcher + coming-soon slots below), channel block. */
+:root {
+  --bg: #f7f4ff;
+  --surface: #ffffff;
+  --fg: #1f1b3d;
+  --muted: #6a6490;
+  --line: #ddd6f5;
+  --accent: #ff4f81;
+  --accent-fg: #ffffff;
+  --accent2: #5a48f0;
+  --star: #ffb400;
+  --display: "Pixelify Sans", "Courier New", monospace;
+  --body: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14112b; --surface: #1d1940; --fg: #efeaff; --muted: #a39ccf;
+    --line: #342e66; --accent: #ff6b95; --accent-fg: #1a0b14; --accent2: #8b7dff; --star: #ffcb3d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14112b; --surface: #1d1940; --fg: #efeaff; --muted: #a39ccf;
+  --line: #342e66; --accent: #ff6b95; --accent-fg: #1a0b14; --accent2: #8b7dff; --star: #ffcb3d;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font: 400 17px/1.6 var(--body);
+  padding-block: 24px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 960px; margin: 0 auto; display: grid; gap: 64px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 700; line-height: 1.1; margin: 0; text-wrap: balance; }
+a:focus-visible, button:focus-visible { outline: 3px solid var(--accent2); outline-offset: 3px; }
+
+nav { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.logo { font-family: var(--display); font-weight: 700; font-size: 22px; }
+.logo span { color: var(--accent); }
+nav ul { display: flex; gap: 20px; list-style: none; margin: 0; padding: 0; font-weight: 600; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--fg); }
+
+.hero { display: grid; gap: 24px; padding-top: 24px; }
+.hero h1 { font-size: clamp(40px, 9vw, 84px); max-width: 12ch; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero p { max-width: 46ch; color: var(--muted); font-size: 19px; margin: 0; }
+.btn {
+  display: inline-flex; align-items: center; gap: 10px; width: fit-content;
+  background: var(--accent); color: var(--accent-fg); text-decoration: none;
+  font: 800 17px var(--body); padding: 14px 24px; border: 0; border-radius: 10px;
+  box-shadow: 0 5px 0 var(--accent2); cursor: pointer; transition: transform .1s, box-shadow .1s;
+}
+.btn:hover { transform: translateY(2px); box-shadow: 0 3px 0 var(--accent2); }
+.btn:active { transform: translateY(5px); box-shadow: 0 0 0 var(--accent2); }
+.btn:disabled { opacity: .6; cursor: default; }
+.handle { font: 600 15px var(--body); color: var(--muted); }
+
+.sec-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+.sec-head h2 { font-size: clamp(28px, 5vw, 40px); }
+.sec-head p { margin: 0; color: var(--muted); }
+
+.shelf { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+.card { background: var(--surface); border: 2px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+.card h3 { font-size: 24px; }
+.card p { margin: 0; color: var(--muted); font-size: 15px; }
+.tag { font: 700 12px var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--accent2); }
+.soon { border-style: dashed; background: transparent; place-items: center; text-align: center; min-height: 200px; align-content: center; }
+.soon .plus { font: 700 44px var(--display); color: var(--line); }
+
+.arena {
+  position: relative; height: 200px; border-radius: 10px; overflow: hidden;
+  background: color-mix(in srgb, var(--accent2) 14%, var(--surface));
+  border: 2px solid var(--line);
+}
+.star {
+  position: absolute; width: 44px; height: 44px; border: 0; background: none; cursor: pointer;
+  font-size: 34px; line-height: 44px; padding: 0; color: var(--star); display: none; transition: left .12s, top .12s;
+}
+.hud { display: flex; justify-content: space-between; font: 700 16px var(--display); }
+.arena .msg { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 12px; color: var(--muted); font-weight: 600; font-size: 15px; }
+
+.channel { background: var(--surface); border: 2px solid var(--line); border-radius: 18px; padding: clamp(20px, 5vw, 40px); display: grid; gap: 16px; }
+.channel h2 { font-size: clamp(28px, 5vw, 40px); }
+.channel p { margin: 0; color: var(--muted); max-width: 52ch; }
+footer { color: var(--muted); font-size: 14px; }
+
+.wide { grid-column: 1 / -1; }
+.picks { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn.alt { background: var(--accent2); color: #fff; box-shadow: 0 5px 0 var(--accent); }
+.btn.alt:hover { box-shadow: 0 3px 0 var(--accent); }
+.btn.alt:active { box-shadow: 0 0 0 var(--accent); }
+.stage { border: 2px solid var(--line); border-radius: 10px; overflow: hidden; background: #f4ecd8; }
+.stage canvas { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; }
+.say { min-height: 1.6em; font: 700 16px var(--body); color: var(--fg); margin: 0; }
+.pad { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pad .grp { display: flex; gap: 12px; }
+.pad button {
+  min-width: 64px; height: 56px; border-radius: 10px; border: 2px solid var(--line); padding: 0 14px;
+  background: var(--surface); color: var(--fg); font: 700 22px var(--body); cursor: pointer; touch-action: none; user-select: none;
+}
+.pad button:active { background: var(--line); }
+.pad .act { font: 800 16px var(--body); background: var(--accent); color: var(--accent-fg); border-color: var(--accent); flex: 1; max-width: 340px; }
+.pad .act:active { background: var(--accent2); color: #fff; }
+.hint { font-size: 14px; color: var(--muted); margin: 0; }
+@media (prefers-reduced-motion: reduce) { .btn, .star { transition: none; } }
+</style>
+
+<div class="wrap">
+  <nav>
+    <div class="logo">Мир <span>Алины</span></div>
+    <ul>
+      <li><a href="#games">Игры</a></li>
+      <li><a href="#channel">YouTube</a></li>
+    </ul>
+  </nav>
+
+  <header class="hero">
+    <h1>Привет! Я <em>Алина</em></h1>
+    <p>Здесь мой YouTube-канал и мои игры. Новые игры появляются на этой странице, заходи и играй.</p>
+    <a class="btn" href="https://www.youtube.com/@Alina-f8e6n" target="_blank" rel="noopener">▶ Смотреть канал</a>
+    <span class="handle">@Alina-f8e6n</span>
+  </header>
+
+  <section id="games">
+    <div class="sec-head">
+      <h2>Мои игры</h2>
+      <p>Играй прямо на странице. Новые игры скоро.</p>
+    </div>
+    <div class="shelf">
+      <article class="card wide" id="house">
+        <span class="tag">Первая версия</span>
+        <h3>Бумажный домик</h3>
+        <p>Выбери, кем играть: бумажной девочкой или бумажным мальчиком. Ходи по дому: переодевайся в шкафу, спи в спальне, доставай еду на кухне и чисти зубы в ванной.</p>
+        <div class="picks">
+          <button class="btn" id="pickGirl" type="button">Бумажная девочка</button>
+          <button class="btn alt" id="pickBoy" type="button">Бумажный мальчик</button>
+        </div>
+        <div class="stage"><canvas id="pc" width="720" height="470" aria-label="Бумажный домик"></canvas></div>
+        <p class="say" id="say" aria-live="polite">Выбери героя, чтобы начать.</p>
+        <div class="pad">
+          <div class="grp">
+            <button id="bL" type="button" aria-label="Влево">◀</button>
+            <button id="bR" type="button" aria-label="Вправо">▶</button>
+          </div>
+          <button class="act" id="bA" type="button">Действие</button>
+        </div>
+        <p class="hint">На компьютере: стрелки или A и D, чтобы ходить. E, Enter или пробел, чтобы взять, открыть или использовать. Лестница посередине дома, ходи по ней вверх и вниз.</p>
+      </article>
+
+      <article class="card">
+        <span class="tag">Можно играть</span>
+        <h3>Поймай звезду</h3>
+        <p>Нажимай на звезду, пока идёт время. Она каждый раз прыгает в новое место.</p>
+        <div class="hud"><span>Очки: <b id="score">0</b></span><span>Время: <b id="time">15</b></span></div>
+        <div class="arena" id="arena">
+          <button class="star" id="star" aria-label="Звезда">★</button>
+          <div class="msg" id="msg">Нажми «Старт»</div>
+        </div>
+        <button class="btn" id="start" type="button">Старт</button>
+      </article>
+
+      <article class="card soon">
+        <div class="plus">+</div>
+        <h3>Новая игра</h3>
+        <p>Скоро здесь появится следующая игра.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="channel" class="channel">
+    <h2>Мой YouTube</h2>
+    <p>Видео, игры и всё, что я придумываю. Подписывайся, чтобы не пропустить новое.</p>
+    <a class="btn" href="https://www.youtube.com/@Alina-f8e6n" target="_blank" rel="noopener">Открыть канал на YouTube</a>
+  </section>
+
+  <footer>© Алина, 2026</footer>
+</div>
+
+<script>
+(function () {
+  var arena = document.getElementById('arena'), star = document.getElementById('star');
+  var scoreEl = document.getElementById('score'), timeEl = document.getElementById('time');
+  var msg = document.getElementById('msg'), startBtn = document.getElementById('start');
+  var score = 0, left = 15, timer = null, best = 0;
+
+  function jump() {
+    var w = arena.clientWidth - 44, h = arena.clientHeight - 44;
+    star.style.left = Math.round(Math.random() * w) + 'px';
+    star.style.top = Math.round(Math.random() * h) + 'px';
+  }
+  function end() {
+    clearInterval(timer); timer = null;
+    star.style.display = 'none';
+    if (score > best) best = score;
+    msg.hidden = false;
+    msg.textContent = 'Время вышло! Очки: ' + score + '. Рекорд: ' + best;
+    startBtn.textContent = 'Ещё раз';
+    startBtn.disabled = false;
+  }
+  startBtn.addEventListener('click', function () {
+    score = 0; left = 15;
+    scoreEl.textContent = score; timeEl.textContent = left;
+    msg.hidden = true; star.style.display = 'block'; jump();
+    startBtn.disabled = true;
+    timer = setInterval(function () {
+      left -= 1; timeEl.textContent = left;
+      if (left <= 0) end();
+    }, 1000);
+  });
+  star.addEventListener('click', function () {
+    if (!timer) return;
+    score += 1; scoreEl.textContent = score; jump();
+  });
+})();
+</script>
+
+<script>
+(function () {
+  var cv = document.getElementById('pc'), ctx = cv.getContext('2d');
+  var sayEl = document.getElementById('say'), actBtn = document.getElementById('bA');
+  var W = 720, H = 470, FLOOR = [240, 450], SPEED = 3;
+  var DISPLAY = '"Pixelify Sans", "Courier New", monospace', BODY = 'Nunito, system-ui, sans-serif';
+
+  var OUTFITS = {
+    girl: [
+      { n: 'розовое платье', top: '#ff6fa1', bot: '#ff6fa1', dress: true },
+      { n: 'синее платье', top: '#4fa3ff', bot: '#4fa3ff', dress: true },
+      { n: 'пижама со звёздами', top: '#ffd54a', bot: '#ffd54a', pj: true },
+      { n: 'зелёный спортивный костюм', top: '#5cc77a', bot: '#3d9a5a' }
+    ],
+    boy: [
+      { n: 'синяя футболка', top: '#4a7bff', bot: '#3b4a8a' },
+      { n: 'красная толстовка', top: '#ef5b5b', bot: '#3b3b4f' },
+      { n: 'пижама со звёздами', top: '#ffd54a', bot: '#ffd54a', pj: true },
+      { n: 'зелёный спортивный костюм', top: '#5cc77a', bot: '#3d9a5a' }
+    ]
+  };
+  var FOODS = ['apple', 'milk', 'cookie'];
+  var FOOD_NAME = { apple: 'яблоко', milk: 'молоко', cookie: 'печенье', brush: 'зубная щётка' };
+
+  var STATIONS = [
+    { id: 'bed', f: 0, x: 105, w: 90 },
+    { id: 'wardrobe', f: 0, x: 470, w: 80 },
+    { id: 'stairs', f: 0, x: 362, w: 40 },
+    { id: 'stairs', f: 1, x: 362, w: 40 },
+    { id: 'fridge', f: 1, x: 72, w: 70 },
+    { id: 'table', f: 1, x: 215, w: 90 },
+    { id: 'sink', f: 1, x: 494, w: 60 },
+    { id: 'cup', f: 1, x: 564, w: 40 }
+  ];
+
+  var kind = null, outfit = { girl: 0, boy: 0 }, foodIdx = 0;
+  var P = { x: 250, f: 0, dir: 1, hold: null, walk: 0, moving: false };
+  var busy = null, t = 0, keys = { l: false, r: false }, sayTimer = 0;
+
+  function say(s) { sayEl.textContent = s; }
+
+  // ----- drawing helpers (cut-paper look: white edge + hard shadow) -----
+  function pap(fn) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(70,45,20,.3)'; ctx.shadowOffsetX = 3; ctx.shadowOffsetY = 4; ctx.shadowBlur = 0;
+    ctx.lineJoin = 'round'; ctx.lineWidth = 5; ctx.strokeStyle = '#fffdf6';
+    fn(); ctx.restore();
+  }
+  function R(x, y, w, h, c) { ctx.fillStyle = c; ctx.strokeRect(x, y, w, h); ctx.fillRect(x, y, w, h); }
+  function C(x, y, r, c) { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = c; ctx.stroke(); ctx.fill(); }
+  function flat(x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }
+  function starShape(x, y, r, c) {
+    ctx.beginPath();
+    for (var i = 0; i < 10; i++) {
+      var a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r;
+      ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+    }
+    ctx.closePath(); ctx.fillStyle = c; ctx.fill();
+  }
+  function label(txt, x, y, size, color, align) {
+    ctx.font = '700 ' + size + 'px ' + DISPLAY; ctx.fillStyle = color; ctx.textAlign = align || 'left'; ctx.fillText(txt, x, y);
+  }
+
+  // ----- the house -----
+  function drawScene() {
+    flat(0, 0, W, H, '#f4ecd8');
+    ctx.strokeStyle = 'rgba(90,130,200,.2)'; ctx.lineWidth = 1;
+    var g;
+    for (g = 0; g <= W; g += 20) { ctx.beginPath(); ctx.moveTo(g + .5, 0); ctx.lineTo(g + .5, H); ctx.stroke(); }
+    for (g = 0; g <= H; g += 20) { ctx.beginPath(); ctx.moveTo(0, g + .5); ctx.lineTo(W, g + .5); ctx.stroke(); }
+
+    pap(function () {
+      ctx.fillStyle = '#d9695b'; ctx.beginPath();
+      ctx.moveTo(4, 48); ctx.lineTo(130, 8); ctx.lineTo(590, 8); ctx.lineTo(716, 48); ctx.closePath(); ctx.stroke(); ctx.fill();
+      R(10, 46, 700, 418, '#c9a67a');
+    });
+    flat(20, 48, 340, 192, '#d5c8f5'); flat(360, 48, 340, 192, '#f8c9dc');
+    flat(20, 258, 340, 192, '#fbe6a8'); flat(360, 258, 340, 192, '#c3e6f2');
+    flat(20, 240, 680, 18, '#b98b5e'); flat(20, 450, 680, 12, '#b98b5e');
+    ctx.strokeStyle = 'rgba(80,50,20,.25)'; ctx.lineWidth = 1;
+    for (g = 40; g < 700; g += 40) {
+      ctx.beginPath(); ctx.moveTo(g, 240); ctx.lineTo(g, 258); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(g, 450); ctx.lineTo(g, 462); ctx.stroke();
+    }
+    flat(356, 48, 8, 84, '#a88a62'); flat(356, 258, 8, 84, '#a88a62');
+    label('Спальня', 32, 76, 16, 'rgba(60,40,90,.6)');
+    label('Переодевалка', 372, 76, 16, 'rgba(90,40,70,.6)');
+    label('Кухня', 32, 286, 16, 'rgba(90,60,20,.6)');
+    label('Ванная', 372, 286, 16, 'rgba(30,70,90,.6)');
+
+    // stairs
+    flat(338, 240, 46, 18, '#4a3b2c');
+    var i;
+    for (i = 0; i < 6; i++) {
+      flat(334 + i * 8, 450 - (i + 1) * 32, 60 - i * 8, 32, i % 2 ? '#d2b184' : '#c29c6a');
+      flat(334 + i * 8, 450 - (i + 1) * 32, 60 - i * 8, 4, '#e8d3ac');
+    }
+    flat(334, 196, 56, 4, '#fffdf6'); flat(334, 200, 4, 40, '#fffdf6'); flat(386, 200, 4, 40, '#fffdf6');
+
+    // bedroom
+    pap(function () {
+      R(222, 92, 56, 66, '#bfe4ff');
+      ctx.fillStyle = '#fffdf6'; ctx.fillRect(248, 92, 4, 66); ctx.fillRect(222, 122, 56, 4);
+      R(188, 208, 34, 32, '#a56b3f');
+      ctx.fillStyle = '#ffe27a'; ctx.beginPath(); ctx.moveTo(196, 208); ctx.lineTo(214, 208); ctx.lineTo(210, 190); ctx.lineTo(200, 190); ctx.closePath(); ctx.stroke(); ctx.fill();
+      R(34, 168, 10, 72, '#a56b3f');
+      R(40, 214, 134, 14, '#a56b3f');
+      R(44, 196, 130, 18, '#fffdf6');
+      R(50, 190, 38, 16, '#fff');
+    });
+    // dressing room
+    pap(function () {
+      R(425, 106, 90, 134, '#c98a5a');
+      ctx.fillStyle = '#a56b3f'; ctx.fillRect(468, 112, 4, 122);
+      C(462, 176, 3, '#ffe9b0'); C(478, 176, 3, '#ffe9b0');
+      starShape(447, 134, 10, '#ffd54a'); starShape(493, 134, 10, '#ffd54a');
+      ctx.beginPath(); ctx.ellipse(610, 150, 28, 46, 0, 0, Math.PI * 2); ctx.fillStyle = '#dff3ff'; ctx.stroke(); ctx.fill();
+      R(540, 232, 130, 8, '#f2a0bf');
+    });
+    ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(600, 128); ctx.lineTo(594, 150); ctx.stroke();
+    // kitchen
+    pap(function () {
+      R(285, 300, 52, 56, '#bfe4ff');
+      ctx.fillStyle = '#fffdf6'; ctx.fillRect(309, 300, 4, 56); ctx.fillRect(285, 326, 52, 4);
+      R(40, 306, 64, 144, '#eaf5ff');
+      ctx.fillStyle = '#b9cfe0'; ctx.fillRect(40, 372, 64, 3);
+      ctx.fillStyle = '#9fb4c6'; ctx.fillRect(92, 330, 4, 22); ctx.fillRect(92, 388, 4, 32);
+      R(165, 388, 100, 10, '#b57a4a'); R(172, 398, 8, 52, '#b57a4a'); R(250, 398, 8, 52, '#b57a4a');
+      R(140, 424, 20, 6, '#b57a4a'); R(140, 396, 5, 34, '#b57a4a');
+      R(270, 424, 20, 6, '#b57a4a'); R(285, 396, 5, 34, '#b57a4a');
+      R(200, 382, 30, 6, '#ffffff');
+    });
+    // bathroom
+    pap(function () {
+      R(472, 324, 44, 54, '#dff3ff');
+      R(486, 414, 16, 36, '#ffffff'); R(468, 398, 52, 16, '#ffffff'); R(490, 386, 8, 12, '#a8bcc9');
+      R(556, 424, 16, 22, '#8cc8ff');
+      if (P.hold !== 'brush') { R(562, 400, 4, 26, '#ff8fb1'); R(560, 394, 8, 8, '#ffffff'); }
+      R(600, 408, 92, 42, '#ffffff'); R(676, 390, 6, 20, '#a8bcc9');
+    });
+    flat(606, 418, 80, 4, '#bfe4ff');
+  }
+
+  // ----- doll -----
+  var SKIN = '#ffe0c2';
+  function drawDoll(x, y, dir) {
+    var o = OUTFITS[kind][outfit[kind]], girl = kind === 'girl';
+    var sw = P.moving && !busy ? Math.sin(P.walk) * 5 : 0;
+    var hair = girl ? '#7a4a2d' : '#2f2a4a';
+    pap(function () {
+      var legC = (o.dress ? SKIN : o.bot);
+      R(x - 8 + sw, y - 28, 6, 28, legC); R(x + 2 - sw, y - 28, 6, 28, legC);
+      R(x - 9 + sw, y - 6, 8, 6, '#8a5a3a'); R(x + 1 - sw, y - 6, 8, 6, '#8a5a3a');
+      R(x - 16, y - 60, 5, 24, o.top); R(x + 11, y - 60, 5, 24, o.top);
+      if (o.dress) {
+        ctx.fillStyle = o.top; ctx.beginPath();
+        ctx.moveTo(x - 7, y - 62); ctx.lineTo(x + 7, y - 62); ctx.lineTo(x + 18, y - 28); ctx.lineTo(x - 18, y - 28); ctx.closePath(); ctx.stroke(); ctx.fill();
+      } else {
+        R(x - 11, y - 62, 22, 34, o.top);
+      }
+      if (girl) { C(x - 19, y - 72, 5, hair); C(x + 19, y - 72, 5, hair); }
+      C(x, y - 78, 16, SKIN);
+      ctx.fillStyle = hair; ctx.beginPath(); ctx.arc(x, y - 80, 16.5, Math.PI, 0); ctx.closePath(); ctx.fill();
+      ctx.fillRect(x - 16, y - 82, 5, girl ? 10 : 6); ctx.fillRect(x + 11, y - 82, 5, girl ? 10 : 6);
+    });
+    if (o.pj) { starShape(x - 3, y - 48, 5, '#fff'); starShape(x + 5, y - 38, 4, '#fff'); }
+    ctx.fillStyle = '#2a2540';
+    ctx.beginPath(); ctx.arc(x - 5 + dir * 2, y - 77, 1.8, 0, Math.PI * 2); ctx.arc(x + 5 + dir * 2, y - 77, 1.8, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,120,150,.5)';
+    ctx.beginPath(); ctx.arc(x - 9 + dir * 2, y - 72, 3, 0, Math.PI * 2); ctx.arc(x + 9 + dir * 2, y - 72, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#2a2540'; ctx.lineWidth = 1.5; ctx.beginPath();
+    var chew = busy && busy.type === 'eat' ? Math.abs(Math.sin(t / 3)) * 3 : 0;
+    ctx.arc(x + dir * 2, y - 72, 4, 0.2, Math.PI - 0.2 + chew * 0.05); ctx.stroke();
+  }
+
+  function drawItem(name, x, y) {
+    pap(function () {
+      ctx.lineWidth = 4;
+      if (name === 'apple') { C(x, y, 7, '#e64545'); ctx.fillStyle = '#4caf50'; ctx.fillRect(x, y - 12, 3, 6); }
+      else if (name === 'milk') { R(x - 6, y - 10, 12, 18, '#ffffff'); ctx.fillStyle = '#5aa8ff'; ctx.fillRect(x - 6, y - 4, 12, 5); }
+      else if (name === 'cookie') { C(x, y, 8, '#d9a066'); ctx.fillStyle = '#6b4226'; ctx.fillRect(x - 3, y - 3, 2, 2); ctx.fillRect(x + 2, y + 1, 2, 2); }
+      else if (name === 'brush') { R(x - 2, y - 14, 4, 24, '#7fd0ff'); R(x - 3, y - 20, 6, 8, '#ffffff'); }
+    });
+  }
+
+  function bubble(txt, cx, y) {
+    ctx.font = '700 14px ' + BODY;
+    var w = ctx.measureText(txt).width + 22, h = 28, x = Math.max(8, Math.min(W - w - 8, cx - w / 2));
+    ctx.save();
+    ctx.fillStyle = '#fffdf6'; ctx.strokeStyle = '#3a3358'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x + 8, y); ctx.arcTo(x + w, y, x + w, y + h, 8); ctx.arcTo(x + w, y + h, x, y + h, 8);
+    ctx.arcTo(x, y + h, x, y, 8); ctx.arcTo(x, y, x + w, y, 8); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#3a3358'; ctx.textAlign = 'left'; ctx.fillText(txt, x + 11, y + 19);
+    ctx.restore();
+  }
+
+  // ----- interaction -----
+  function nearest() {
+    var best = null, bd = 1e9;
+    STATIONS.forEach(function (s) {
+      if (s.f !== P.f) return;
+      var d = Math.abs(P.x - s.x);
+      if (d <= s.w / 2 + 14 && d < bd) { best = s; bd = d; }
+    });
+    return best;
+  }
+  function isFood(h) { return h === 'apple' || h === 'milk' || h === 'cookie'; }
+  function labelFor(s) {
+    var h = P.hold;
+    switch (s.id) {
+      case 'bed': return 'Лечь спать';
+      case 'wardrobe': return 'Переодеться';
+      case 'stairs': return P.f === 0 ? 'Вниз по лестнице' : 'Вверх по лестнице';
+      case 'fridge': return isFood(h) ? 'Убрать в холодильник' : h ? 'Руки заняты' : 'Достать еду';
+      case 'table': return isFood(h) ? 'Поесть' : 'Стол: нужна еда';
+      case 'sink': return h === 'brush' ? 'Почистить зубы' : 'Раковина: нужна щётка';
+      case 'cup': return h === 'brush' ? 'Поставить щётку' : h ? 'Руки заняты' : 'Взять зубную щётку';
+    }
+    return 'Действие';
+  }
+  function act() {
+    if (!kind || busy) return;
+    var s = nearest();
+    if (!s) { say('Подойди к мебели, чтобы что-то сделать.'); return; }
+    var h = P.hold;
+    switch (s.id) {
+      case 'bed': busy = { type: 'sleep', t: 200 }; say('Спокойной ночи... Zzz'); break;
+      case 'wardrobe':
+        outfit[kind] = (outfit[kind] + 1) % OUTFITS[kind].length;
+        say('Новый наряд: ' + OUTFITS[kind][outfit[kind]].n + '.'); break;
+      case 'stairs': P.f = P.f === 0 ? 1 : 0; P.x = 362; say(P.f === 0 ? 'Ты наверху: спальня и переодевалка.' : 'Ты внизу: кухня и ванная.'); break;
+      case 'fridge':
+        if (isFood(h)) { P.hold = null; say('Еда убрана в холодильник.'); }
+        else if (h) say('Сначала положи то, что в руках.');
+        else { P.hold = FOODS[foodIdx % FOODS.length]; foodIdx++; say('В руках: ' + FOOD_NAME[P.hold] + '. Неси к столу.'); }
+        break;
+      case 'table':
+        if (isFood(h)) { busy = { type: 'eat', t: 80 }; say('Ням-ням...'); }
+        else say('На стол нечего поесть. Загляни в холодильник.');
+        break;
+      case 'sink':
+        if (h === 'brush') { busy = { type: 'brush', t: 110 }; say('Чистим зубы...'); }
+        else say('Возьми зубную щётку из стаканчика.');
+        break;
+      case 'cup':
+        if (h === 'brush') { P.hold = null; say('Щётка стоит в стаканчике.'); }
+        else if (h) say('Сначала положи то, что в руках.');
+        else { P.hold = 'brush'; say('В руках: зубная щётка. Неси к раковине.'); }
+        break;
+    }
+  }
+
+  function update() {
+    if (!kind) return;
+    if (busy) {
+      busy.t--;
+      if (busy.t <= 0) {
+        if (busy.type === 'sleep') say('Доброе утро!');
+        if (busy.type === 'eat') { P.hold = null; say('Вкусно! Можно идти дальше.'); }
+        if (busy.type === 'brush') say('Зубы блестят!');
+        busy = null;
+      }
+      P.moving = false; return;
+    }
+    var v = (keys.r ? SPEED : 0) - (keys.l ? SPEED : 0);
+    P.moving = v !== 0;
+    if (v) { P.dir = v > 0 ? 1 : -1; P.walk += 0.28; P.x = Math.max(34, Math.min(W - 34, P.x + v)); }
+  }
+
+  function render() {
+    drawScene();
+    if (!kind) {
+      ctx.fillStyle = 'rgba(255,253,246,.8)'; ctx.fillRect(160, 200, 400, 80);
+      label('Выбери героя над домиком', W / 2, 250, 24, '#3a3358', 'center');
+      return;
+    }
+    var fy = FLOOR[P.f];
+    if (busy && busy.type === 'sleep') {
+      ctx.save(); ctx.translate(160, 212); ctx.rotate(-Math.PI / 2); drawDoll(0, 0, 1); ctx.restore();
+      pap(function () { R(92, 202, 82, 26, '#7aa6ff'); });
+      ctx.fillStyle = 'rgba(255,255,255,.5)'; for (var k = 0; k < 3; k++) ctx.fillRect(104 + k * 22, 202, 6, 26);
+      var p = 1 - Math.abs(busy.t - 100) / 100, a = Math.max(0, Math.min(0.6, p * 1.2));
+      ctx.fillStyle = 'rgba(20,20,70,' + a + ')'; ctx.fillRect(0, 0, W, H);
+      label('Z', 70, 170 - (t % 60) / 3, 22, '#fff'); label('z', 92, 150 - (t % 60) / 3, 16, '#fff'); label('z', 108, 134 - (t % 60) / 3, 12, '#fff');
+      return;
+    }
+    drawDoll(P.x, fy, P.dir);
+    if (P.hold && !(busy && busy.type === 'eat')) drawItem(P.hold, P.x + P.dir * 22, fy - 38);
+    if (busy && busy.type === 'eat') drawItem(P.hold, P.x + P.dir * 8, fy - 66 + Math.sin(t / 3) * 2);
+    if (busy && busy.type === 'brush') {
+      drawItem('brush', P.x + P.dir * 12 + Math.sin(t / 2) * 3, fy - 66);
+      starShape(P.x + P.dir * 26, fy - 82 + Math.sin(t / 4) * 3, 6, '#fff'); starShape(P.x - P.dir * 24, fy - 96, 4, '#bfe4ff');
+    }
+    if (!busy) {
+      var s = nearest();
+      if (s) bubble(labelFor(s), P.x, fy - 130);
+    }
+  }
+
+  var lastBtn = '';
+  function loop() {
+    t++; update(); render();
+    var s = kind && !busy ? nearest() : null, txt = s ? labelFor(s) : 'Действие';
+    if (txt !== lastBtn) { actBtn.textContent = txt; lastBtn = txt; }
+    requestAnimationFrame(loop);
+  }
+
+  function pick(k) {
+    var first = !kind;
+    kind = k;
+    if (first) { P.x = 250; P.f = 0; }
+    say(k === 'girl' ? 'Ты играешь за бумажную девочку. Ходи по дому!' : 'Ты играешь за бумажного мальчика. Ходи по дому!');
+  }
+  document.getElementById('pickGirl').addEventListener('click', function () { pick('girl'); });
+  document.getElementById('pickBoy').addEventListener('click', function () { pick('boy'); });
+  actBtn.addEventListener('click', act);
+
+  var KEYMAP = { ArrowLeft: 'l', a: 'l', A: 'l', ф: 'l', ArrowRight: 'r', d: 'r', D: 'r', в: 'r' };
+  var ACTKEYS = { e: 1, E: 1, у: 1, Enter: 1, ' ': 1 };
+  function onKey(e, down) {
+    if (!kind) return;
+    var m = KEYMAP[e.key];
+    if (m) { keys[m] = down; e.preventDefault(); return; }
+    var tag = e.target && e.target.tagName;
+    if (down && !e.repeat && tag !== 'BUTTON' && tag !== 'A') {
+      if (ACTKEYS[e.key]) { act(); e.preventDefault(); }
+      else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+        var s = nearest();
+        if (s && s.id === 'stairs') act();
+        e.preventDefault();
+      }
+    }
+  }
+  window.addEventListener('keydown', function (e) { onKey(e, true); });
+  window.addEventListener('keyup', function (e) { onKey(e, false); });
+
+  function hold(id, m) {
+    var b = document.getElementById(id);
+    function on(e) { e.preventDefault(); keys[m] = true; }
+    function off(e) { e.preventDefault(); keys[m] = false; }
+    b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off);
+    b.addEventListener('pointerleave', off); b.addEventListener('pointercancel', off);
+  }
+  hold('bL', 'l'); hold('bR', 'r');
+
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body></html>
