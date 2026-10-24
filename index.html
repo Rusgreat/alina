@@ -3,7 +3,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&family=Pixelify+Sans:wght@500;700&display=swap">
 <style>
-/* Layout: one column, hero with channel button, game shelf (paper house and Mihalina adventure full width, star catcher + coming-soon below), channel block. */
+/* Layout: one column, hero with channel button, game shelf (paper house full width, original Mihalina game in its own page, star catcher + coming-soon below), channel block. */
 :root {
   --bg: #f7f4ff;
   --surface: #ffffff;
@@ -68,7 +68,6 @@ nav a:hover { color: var(--fg); }
 
 .shelf { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
 .card { background: var(--surface); border: 2px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 14px; align-content: start; min-width: 0; }
-.card.is-on { box-shadow: 0 0 0 3px var(--accent2); }
 .card h3 { font-size: 24px; }
 .card p { margin: 0; color: var(--muted); font-size: 15px; }
 .tag { font: 700 12px var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--accent2); }
@@ -107,7 +106,8 @@ footer { color: var(--muted); font-size: 14px; }
   background: var(--surface); color: var(--fg); font: 700 22px var(--body); cursor: pointer; touch-action: none; user-select: none;
 }
 .pad button:active { background: var(--line); }
-.pad .act { font: 800 16px var(--body); background: var(--accent); color: var(--accent-fg); border-color: var(--accent); flex: 1 1 200px; max-width: 340px; text-align: center; }
+.pad .act { font: 800 16px var(--body); background: var(--accent); color: var(--accent-fg); border-color: var(--accent); flex: 1; max-width: 340px; }
+.game-frame { display: block; width: 100%; height: min(78dvh, 760px); min-height: 560px; border: 0; border-radius: 14px; background: #9be7ff; }
 .pad .act:active { background: var(--accent2); color: #fff; }
 .hint { font-size: 14px; color: var(--muted); margin: 0; }
 @media (prefers-reduced-motion: reduce) { .btn, .star { transition: none; } }
@@ -133,7 +133,7 @@ footer { color: var(--muted); font-size: 14px; }
   <section id="games">
     <div class="sec-head">
       <h2>Мои игры</h2>
-      <p>Играй прямо на странице. В полке есть приключение Михалины.</p>
+      <p>Играй прямо на странице. Приключение Михалины открывается здесь же.</p>
     </div>
     <div class="shelf">
       <article class="card wide" id="house">
@@ -158,20 +158,10 @@ footer { color: var(--muted); font-size: 14px; }
 
       <article class="card wide" id="mihalina">
         <span class="tag">Приключение</span>
-        <h3>Приключение Михалины</h3>
-        <p>Михалина ищет три бумажные звезды. Набери воду в колодце, полей цветок и открой калитку ключом. В лесу запрыгни на мостик, собери звёзды и верни их в башню.</p>
-        <div class="hud"><span>Место: <b id="mvPlace">Сад</b></span><span>Звёзды: <b id="mvStars">0</b>/3</span></div>
-        <div class="stage"><canvas id="mv" width="720" height="470" aria-label="Приключение Михалины"></canvas></div>
-        <p class="say" id="mvSay" aria-live="polite">Михалина в саду. Набери воду в колодце слева.</p>
-        <div class="pad">
-          <div class="grp">
-            <button id="mvL" type="button" aria-label="Влево">◀</button>
-            <button id="mvR" type="button" aria-label="Вправо">▶</button>
-            <button id="mvJ" type="button" aria-label="Прыжок">▲</button>
-          </div>
-          <button class="act" id="mvA" type="button">Действие</button>
-        </div>
-        <p class="hint">Нажми на эту игру, чтобы управлять ей. Стрелки или A и D — ходить. W, стрелка вверх или пробел — прыжок. E или Enter — действие.</p>
+        <h3>Михалина: Кристаллы приключений</h3>
+        <p>Прыгайте по платформам, собирайте кристаллы и найдите золотые ворота вместе с мишкой.</p>
+        <iframe class="game-frame" src="mihalina_adventure/index.html" title="Михалина: Кристаллы приключений"></iframe>
+        <p class="hint">Игра открыта в своём окне и выглядит как раньше. Стрелки или A и D — ходить, пробел или стрелка вверх — прыжок. На телефоне кнопки внутри игры.</p>
       </article>
 
       <article class="card">
@@ -494,18 +484,7 @@ footer { color: var(--muted); font-size: 14px; }
     }
   }
 
-  function setGameFocus(name) {
-    window.__gameFocus = name;
-    var h = document.getElementById('house');
-    var m = document.getElementById('mihalina');
-    if (h) h.classList.toggle('is-on', name === 'house');
-    if (m) m.classList.toggle('is-on', name === 'mihalina');
-  }
-  window.setGameFocus = setGameFocus;
-  document.getElementById('house').addEventListener('pointerdown', function () { setGameFocus('house'); });
-
   function update() {
-    if (window.__gameFocus !== 'house') { keys.l = false; keys.r = false; }
     if (!kind) return;
     if (busy) {
       busy.t--;
@@ -563,7 +542,6 @@ footer { color: var(--muted); font-size: 14px; }
   function pick(k) {
     var first = !kind;
     kind = k;
-    setGameFocus('house');
     if (first) { P.x = 250; P.f = 0; }
     say(k === 'girl' ? 'Ты играешь за бумажную девочку. Ходи по дому!' : 'Ты играешь за бумажного мальчика. Ходи по дому!');
   }
@@ -574,7 +552,6 @@ footer { color: var(--muted); font-size: 14px; }
   var KEYMAP = { ArrowLeft: 'l', a: 'l', A: 'l', ф: 'l', ArrowRight: 'r', d: 'r', D: 'r', в: 'r' };
   var ACTKEYS = { e: 1, E: 1, у: 1, Enter: 1, ' ': 1 };
   function onKey(e, down) {
-    if (window.__gameFocus !== 'house') return;
     if (!kind) return;
     var m = KEYMAP[e.key];
     if (m) { keys[m] = down; e.preventDefault(); return; }
@@ -600,331 +577,6 @@ footer { color: var(--muted); font-size: 14px; }
   }
   hold('bL', 'l'); hold('bR', 'r');
 
-  requestAnimationFrame(loop);
-})();
-</script>
-
-<script>
-(function () {
-  var cv = document.getElementById('mv'), ctx = cv.getContext('2d');
-  var sayEl = document.getElementById('mvSay'), actBtn = document.getElementById('mvA');
-  var placeEl = document.getElementById('mvPlace'), starsEl = document.getElementById('mvStars');
-  var W = 720, H = 470, GROUND = 400, SPEED = 3.6, GRAV = 0.4, JUMP = -11.4;
-  var BODY = 'Nunito, system-ui, sans-serif';
-  var PLACES = ['Сад', 'Лес', 'Башня'];
-  var HOT = [
-    [{ id: 'well', x: 176, w: 110 }, { id: 'flower', x: 360, w: 130 }, { id: 'gate', x: 640, w: 140 }],
-    [{ id: 'trail', x: 660, w: 130 }],
-    [{ id: 'altar', x: 390, w: 240 }]
-  ];
-  var PLATS = [
-    [{ x: 0, y: GROUND, w: W, h: 80 }],
-    [{ x: 0, y: GROUND, w: W, h: 80 }, { x: 150, y: 275, w: 300, h: 16 }],
-    [{ x: 0, y: GROUND, w: W, h: 80 }]
-  ];
-
-  var scene = 0, stars = 0, hasWater = false, bloomed = false, hasKey = false, won = false;
-  var starList = [{ x: 120, y: 368 }, { x: 300, y: 246 }, { x: 590, y: 368 }];
-  var p = { x: 40, y: GROUND - 58, w: 26, h: 58, vx: 0, vy: 0, dir: 1, onGround: true, coyote: 0, walk: 0 };
-  var keys = { l: false, r: false }, jumpHeld = false, t = 0, confetti = null;
-
-  function say(s) { sayEl.textContent = s; }
-  function reset() {
-    scene = 0; stars = 0; hasWater = false; bloomed = false; hasKey = false; won = false; confetti = null;
-    starList.forEach(function (s) { s.got = false; });
-    p.x = 40; p.y = GROUND - p.h; p.vx = 0; p.vy = 0; p.dir = 1; p.onGround = true; p.coyote = 0;
-    say('Михалина в саду. Набери воду в колодце слева.');
-  }
-
-  function pap(fn) {
-    ctx.save();
-    ctx.shadowColor = 'rgba(70,45,20,.28)'; ctx.shadowOffsetX = 3; ctx.shadowOffsetY = 4; ctx.shadowBlur = 0;
-    ctx.lineJoin = 'round'; ctx.lineWidth = 5; ctx.strokeStyle = '#fffdf6';
-    fn(); ctx.restore();
-  }
-  function R(x, y, w, h, c) { ctx.fillStyle = c; ctx.strokeRect(x, y, w, h); ctx.fillRect(x, y, w, h); }
-  function C(x, y, r, c) { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = c; ctx.stroke(); ctx.fill(); }
-  function flat(x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }
-  function starShape(x, y, r, c) {
-    ctx.beginPath();
-    for (var i = 0; i < 10; i++) {
-      var a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r;
-      ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
-    }
-    ctx.closePath(); ctx.fillStyle = c; ctx.fill();
-  }
-  function label(txt, x, y, size, color, align) {
-    ctx.font = '800 ' + size + 'px ' + BODY; ctx.fillStyle = color; ctx.textAlign = align || 'left'; ctx.fillText(txt, x, y);
-  }
-  function bubble(txt, cx, y) {
-    ctx.font = '700 14px ' + BODY;
-    var w = ctx.measureText(txt).width + 22, h = 28, x = Math.max(8, Math.min(W - w - 8, cx - w / 2));
-    ctx.save();
-    ctx.fillStyle = '#fffdf6'; ctx.strokeStyle = '#3a3358'; ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(x + 8, y); ctx.arcTo(x + w, y, x + w, y + h, 8); ctx.arcTo(x + w, y + h, x, y + h, 8);
-    ctx.arcTo(x, y + h, x, y, 8); ctx.arcTo(x, y, x + w, y, 8); ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#3a3358'; ctx.textAlign = 'left'; ctx.fillText(txt, x + 11, y + 19);
-    ctx.restore();
-  }
-
-  function drawDoll() {
-    var x = p.x + p.w / 2, y = p.y + p.h, dir = p.dir;
-    var sw = p.vx && p.onGround && !won ? Math.sin(p.walk) * 5 : 0;
-    var bob = won ? Math.sin(t / 8) * 3 : 0;
-    y += bob;
-    ctx.fillStyle = 'rgba(70,45,20,.18)';
-    ctx.beginPath(); ctx.ellipse(x, p.y + p.h + 2, 16, 5, 0, 0, Math.PI * 2); ctx.fill();
-    pap(function () {
-      R(x - 8 + sw, y - 28, 6, 28, '#ffe0c2'); R(x + 2 - sw, y - 28, 6, 28, '#ffe0c2');
-      R(x - 9 + sw, y - 6, 8, 6, '#8a5a3a'); R(x + 1 - sw, y - 6, 8, 6, '#8a5a3a');
-      R(x - 16, y - 60, 5, 22, '#ff7eb3'); R(x + 11, y - 60, 5, 22, '#ff7eb3');
-      ctx.fillStyle = '#ff7eb3'; ctx.beginPath();
-      ctx.moveTo(x - 7, y - 64); ctx.lineTo(x + 7, y - 64); ctx.lineTo(x + 18, y - 30); ctx.lineTo(x - 18, y - 30); ctx.closePath();
-      ctx.stroke(); ctx.fill();
-      C(x - 18, y - 74, 5, '#6b3fa0'); C(x + 18, y - 74, 5, '#6b3fa0');
-      C(x, y - 80, 15, '#ffe0c2');
-      ctx.fillStyle = '#6b3fa0'; ctx.beginPath(); ctx.arc(x, y - 82, 15.5, Math.PI, 0); ctx.closePath(); ctx.fill();
-      ctx.fillRect(x - 15, y - 84, 5, 12); ctx.fillRect(x + 10, y - 84, 5, 12);
-      starShape(x + 10, y - 96, 6, '#ffd54a');
-    });
-    ctx.fillStyle = '#2a2540';
-    ctx.beginPath(); ctx.arc(x - 5 + dir * 2, y - 79, 1.7, 0, Math.PI * 2); ctx.arc(x + 5 + dir * 2, y - 79, 1.7, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#2a2540'; ctx.lineWidth = 1.5; ctx.beginPath();
-    ctx.arc(x + dir, y - 74, 4, 0.15, Math.PI - 0.15); ctx.stroke();
-    if (hasWater) pap(function () { R(x + dir * 18, y - 58, 12, 14, '#7ec8e3'); R(x + dir * 20, y - 66, 8, 6, '#8a7bb8'); });
-    if (hasKey && scene === 0) pap(function () { C(x + dir * 20, y - 62, 5, '#ffd54a'); R(x + dir * 20, y - 58, 3, 14, '#ffd54a'); });
-  }
-
-  function drawGarden() {
-    flat(0, 0, W, 230, '#bfe9ff');
-    flat(0, 230, W, H, '#d9f6c8');
-    C(86, 64, 18, '#fff'); C(112, 58, 26, '#fff'); C(140, 66, 16, '#fff');
-    C(620, 68, 34, '#ffe27a');
-    var wing = 8 + Math.sin(t / 7) * 4, bx = 500 + Math.sin(t / 40) * 30, by = 120 + Math.sin(t / 25) * 10;
-    ctx.fillStyle = '#ff8ad4';
-    ctx.beginPath(); ctx.ellipse(bx - wing, by, Math.abs(wing), 6, 0, 0, Math.PI * 2); ctx.ellipse(bx + wing, by, Math.abs(wing), 6, 0, 0, Math.PI * 2); ctx.fill();
-    pap(function () {
-      R(0, GROUND - 8, W, 78, '#6fbe6a');
-      R(78, 312, 64, 82, '#d7d3ea');
-      R(70, 298, 80, 16, '#8a7bb8');
-      C(110, 348, 14, hasWater ? '#c5d0dc' : '#7ec8e3');
-      R(352, 352, 8, 48, '#3d9a5a');
-      ctx.fillStyle = '#3d9a5a';
-      ctx.beginPath(); ctx.ellipse(338, 372, 14, 6, -0.7, 0, Math.PI * 2); ctx.fill();
-      var petal = bloomed ? '#ff5fa2' : '#d36b8c';
-      var py = bloomed ? 328 : 340;
-      var pr = bloomed ? 11 : 8;
-      C(356, py - pr, pr, petal); C(356 - pr, py, pr, petal); C(356 + pr, py, pr, petal); C(356, py + pr * 0.6, pr, petal);
-      C(356, py, 6, '#ffe27a');
-      R(588, 268, 100, 132, '#c98a5a');
-      R(616, 312, 44, 88, hasKey ? '#ffe9b0' : '#8d5b34');
-    });
-    label('колодец', 78, 290, 15, '#3a3358');
-    label('цветок', 322, 300, 15, '#3a3358');
-    label('калитка', 598, 256, 15, '#3a3358');
-    label('Сад', 24, 40, 26, '#3a3358');
-  }
-
-  function drawForest() {
-    flat(0, 0, W, H, '#c8ebc0');
-    flat(0, 0, W, 150, '#8fd0b4');
-    var i;
-    for (i = 0; i < 4; i++) {
-      var tx = 20 + i * 140;
-      pap(function () {
-        R(tx + 18, 168, 18, 150, '#8a5a3a');
-        C(tx + 27, 150, 46, i % 2 ? '#3e9a62' : '#2f7d52');
-      });
-    }
-    pap(function () { R(0, GROUND - 8, W, 78, '#4f9a55'); });
-    var pl = PLATS[1][1];
-    pap(function () { R(pl.x, pl.y, pl.w, pl.h, '#e7c48a'); });
-    label('прыгай', pl.x + 36, pl.y - 10, 14, '#3a3358');
-    label('Лес', 24, 40, 26, '#163828');
-    label('к башне →', 600, 360, 16, '#163828');
-    starList.forEach(function (s) { if (!s.got) starShape(s.x, s.y, 14, '#ffd54a'); });
-  }
-
-  function drawTower() {
-    flat(0, 0, W, H, '#241b4a');
-    var i;
-    for (i = 0; i < 18; i++) starShape(40 + (i * 97) % 680, 30 + (i * 53) % 180, 3 + (i % 3), 'rgba(255,244,200,.85)');
-    pap(function () {
-      R(250, 120, 220, 280, '#6d5bd0');
-      ctx.fillStyle = '#ffd54a'; ctx.beginPath();
-      ctx.moveTo(230, 130); ctx.lineTo(360, 48); ctx.lineTo(490, 130); ctx.closePath(); ctx.stroke(); ctx.fill();
-      R(330, 250, 60, 150, '#3a2d78');
-      R(0, GROUND - 8, W, 78, '#3c315f');
-      R(330, 214, 120, 28, '#ffd54a');
-    });
-    if (won) {
-      starShape(360, 188, 16, '#fff'); starShape(420, 188, 16, '#fff'); starShape(390, 168, 18, '#ffd54a');
-    }
-    label('алтарь', 356, 208, 16, '#fff8dc');
-    label('Башня', 24, 40, 26, '#fff8dc');
-  }
-
-  function nearest() {
-    var best = null, bd = 1e9, cx = p.x + p.w / 2;
-    HOT[scene].forEach(function (s) {
-      var d = Math.abs(cx - s.x);
-      if (d <= s.w / 2 && d < bd) { best = s; bd = d; }
-    });
-    return best;
-  }
-  function labelFor(s) {
-    if (s.id === 'well') return (hasWater || bloomed || hasKey) ? 'Колодец' : 'Набрать воды';
-    if (s.id === 'flower') return bloomed || hasKey ? 'Цветок цветёт' : hasWater ? 'Полить цветок' : 'Нужна вода';
-    if (s.id === 'gate') return hasKey ? 'Открыть калитку' : 'Калитка закрыта';
-    if (s.id === 'trail') return stars >= 3 ? 'К башне' : 'Нужны 3 звезды';
-    if (s.id === 'altar') return won ? 'Ещё раз' : 'Вернуть звёзды';
-    return 'Действие';
-  }
-  function nudge() {
-    if (scene === 0 && !hasWater && !hasKey) return 'Подойди к колодцу слева и нажми действие.';
-    if (scene === 0 && hasWater) return 'Подойди к цветку и полей его.';
-    if (scene === 0 && hasKey) return 'Подойди к калитке справа.';
-    if (scene === 1 && stars < 3) return 'Собери 3 звезды. На мостик нужно прыгнуть.';
-    if (scene === 1) return 'Все звёзды собраны. Подойди к тропинке справа.';
-    return 'Подойди к алтарю в середине башни.';
-  }
-  function go(n) {
-    scene = n;
-    p.x = 36; p.y = GROUND - p.h; p.vx = 0; p.vy = 0; p.onGround = true;
-    if (n === 1) say('Бумажный лес. Прыгни на мостик и собери 3 звезды.');
-    if (n === 2) say('Башня звёзд. Подойди к алтарю и верни их.');
-  }
-  function act() {
-    if (window.__gameFocus !== 'mihalina') window.setGameFocus('mihalina');
-    if (won) { reset(); return; }
-    var s = nearest();
-    if (!s) { say(nudge()); return; }
-    if (s.id === 'well') {
-      if (!hasWater && !bloomed && !hasKey) { hasWater = true; say('Ведро полное. Теперь полей цветок.'); }
-      else say('В колодце спокойная вода.');
-    } else if (s.id === 'flower') {
-      if (bloomed || hasKey) say('Цветок уже цветёт.');
-      else if (hasWater) { hasWater = false; bloomed = true; hasKey = true; say('Цветок расцвёл и подарил ключ. Открой калитку справа.'); }
-      else say('Сначала набери воду в колодце.');
-    } else if (s.id === 'gate') {
-      if (hasKey) go(1);
-      else say('Калитка закрыта. Ключ отдаст политый цветок.');
-    } else if (s.id === 'trail') {
-      if (stars >= 3) go(2);
-      else say('Сначала собери 3 звезды. Сейчас: ' + stars + '.');
-    } else if (s.id === 'altar') {
-      won = true;
-      say('Ура! Звёзды снова светят. Михалина справилась!');
-    }
-  }
-  function tryJump() {
-    if (won) return;
-    if (p.onGround || p.coyote > 0) { p.vy = JUMP; p.onGround = false; p.coyote = 0; }
-  }
-
-  function update() {
-    if (window.__gameFocus !== 'mihalina') { keys.l = false; keys.r = false; jumpHeld = false; }
-    if (won) return;
-    p.vx = (keys.r ? SPEED : 0) - (keys.l ? SPEED : 0);
-    if (p.vx) { p.dir = p.vx > 0 ? 1 : -1; p.walk += 0.28; }
-    p.x += p.vx;
-    if (p.x < 16) p.x = 16;
-    if (p.x > W - 16 - p.w) p.x = W - 16 - p.w;
-    p.vy += GRAV;
-    if (p.vy > 12) p.vy = 12;
-    var prevBottom = p.y + p.h;
-    p.y += p.vy;
-    p.onGround = false;
-    PLATS[scene].forEach(function (pl) {
-      var overlapX = p.x + p.w > pl.x + 6 && p.x < pl.x + pl.w - 6;
-      if (p.vy >= 0 && overlapX && prevBottom <= pl.y + 4 && p.y + p.h >= pl.y) {
-        p.y = pl.y - p.h; p.vy = 0; p.onGround = true;
-      }
-    });
-    if (p.onGround) p.coyote = 8;
-    else if (p.coyote) p.coyote -= 1;
-    if (p.y > H) { p.y = GROUND - p.h; p.vy = 0; }
-    if (scene === 1) {
-      var cx = p.x + p.w / 2, cy = p.y + p.h / 2;
-      starList.forEach(function (s) {
-        if (s.got) return;
-        var dx = cx - s.x, dy = cy - s.y;
-        if (dx * dx + dy * dy < 44 * 44) {
-          s.got = true; stars += 1;
-          say(stars >= 3 ? 'Все звёзды у Михалины. Иди к тропинке справа.' : 'Звезда! Осталось ' + (3 - stars) + '.');
-        }
-      });
-    }
-  }
-
-  function render() {
-    if (scene === 0) drawGarden();
-    else if (scene === 1) drawForest();
-    else drawTower();
-    drawDoll();
-    if (!won) {
-      var s = nearest();
-      if (s) bubble(labelFor(s), p.x + p.w / 2, p.y - 36);
-    } else {
-      if (!confetti) {
-        confetti = [];
-        var colors = ['#ff4f81', '#ffb400', '#8b7dff', '#5ec8c5', '#fff'];
-        for (var i = 0; i < 36; i++) confetti.push({ x: Math.random() * W, y: Math.random() * H, v: 1 + Math.random() * 2.2, s: 4 + Math.random() * 6, c: colors[i % colors.length] });
-      }
-      confetti.forEach(function (c) {
-        c.y += c.v; if (c.y > H) c.y = -8;
-        flat(c.x, c.y, c.s, c.s * 0.6, c.c);
-      });
-      label('Ура! Звёзды светят', W / 2, 90, 28, '#fff8dc', 'center');
-    }
-    placeEl.textContent = PLACES[scene];
-    starsEl.textContent = String(stars);
-    var txt = won ? 'Ещё раз' : (nearest() ? labelFor(nearest()) : 'Действие');
-    if (actBtn.textContent !== txt) actBtn.textContent = txt;
-  }
-
-  function loop() { t += 1; update(); render(); requestAnimationFrame(loop); }
-
-  document.getElementById('mihalina').addEventListener('pointerdown', function () { window.setGameFocus('mihalina'); });
-  actBtn.addEventListener('click', act);
-  function hold(id, which) {
-    var b = document.getElementById(id);
-    function on(e) { e.preventDefault(); window.setGameFocus('mihalina'); keys[which] = true; }
-    function off(e) { e.preventDefault(); keys[which] = false; }
-    b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off);
-    b.addEventListener('pointerleave', off); b.addEventListener('pointercancel', off);
-  }
-  hold('mvL', 'l'); hold('mvR', 'r');
-  var jumpBtn = document.getElementById('mvJ');
-  jumpBtn.addEventListener('pointerdown', function (e) { e.preventDefault(); window.setGameFocus('mihalina'); jumpHeld = true; tryJump(); });
-  jumpBtn.addEventListener('pointerup', function (e) { e.preventDefault(); jumpHeld = false; });
-  jumpBtn.addEventListener('pointerleave', function () { jumpHeld = false; });
-  jumpBtn.addEventListener('pointercancel', function () { jumpHeld = false; });
-
-  var LEFT = { ArrowLeft: 1, a: 1, A: 1, ф: 1, Ф: 1 };
-  var RIGHT = { ArrowRight: 1, d: 1, D: 1, в: 1, В: 1 };
-  var JUMPK = { ArrowUp: 1, w: 1, W: 1, ц: 1, Ц: 1, ' ': 1 };
-  var ACTK = { e: 1, E: 1, у: 1, У: 1, Enter: 1 };
-  function onKey(e, down) {
-    if (window.__gameFocus !== 'mihalina') return;
-    if (LEFT[e.key]) { keys.l = down; if (down) e.preventDefault(); return; }
-    if (RIGHT[e.key]) { keys.r = down; if (down) e.preventDefault(); return; }
-    if (JUMPK[e.key]) {
-      var tag = e.target && e.target.tagName;
-      if (!down) jumpHeld = false;
-      else if (tag !== 'BUTTON' && tag !== 'A') { jumpHeld = true; tryJump(); e.preventDefault(); }
-      return;
-    }
-    if (down && !e.repeat && ACTK[e.key]) {
-      var tag2 = e.target && e.target.tagName;
-      if (tag2 !== 'BUTTON' && tag2 !== 'A') { act(); e.preventDefault(); }
-    }
-  }
-  window.addEventListener('keydown', function (e) { onKey(e, true); });
-  window.addEventListener('keyup', function (e) { onKey(e, false); });
-
-  reset();
   requestAnimationFrame(loop);
 })();
 </script>
