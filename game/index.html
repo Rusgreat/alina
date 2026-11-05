@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ball Bucks</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background:
+      radial-gradient(circle at 12% 16%, #fff 0 16px, transparent 18px),
+      radial-gradient(circle at 78% 10%, #fff 0 22px, transparent 24px),
+      linear-gradient(#ffe38a, #fff6e8 46%, #ffd0c2);
+    color: #241c16;
+    font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  }
+  .wrap {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: max(16px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+  }
+  .panel {
+    background: #fffdf8;
+    border: 4px solid #241c16;
+    border-radius: 28px;
+    box-shadow: 0 8px 0 #241c16;
+    padding: 16px 16px 14px;
+  }
+  .panel.shake { animation: shake 0.42s linear; }
+  @keyframes shake {
+    0%, 100% { transform: translate(0, 0) rotate(0); }
+    20% { transform: translate(-7px, 2px) rotate(-0.6deg); }
+    40% { transform: translate(8px, -3px) rotate(0.7deg); }
+    60% { transform: translate(-5px, -2px) rotate(-0.4deg); }
+    80% { transform: translate(4px, 2px) rotate(0.3deg); }
+  }
+  .eyebrow {
+    margin: 0;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-size: 12px;
+    color: #c45b18;
+  }
+  h1 {
+    margin: 2px 0 0;
+    font-size: clamp(36px, 9vw, 48px);
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+  }
+  .score-label {
+    margin: 10px 0 0;
+    text-align: center;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 12px;
+    color: #6d6256;
+  }
+  #total {
+    margin: 0;
+    text-align: center;
+    font-weight: 900;
+    font-size: clamp(72px, 20vw, 108px);
+    line-height: 0.86;
+    color: #178a45;
+    text-shadow: 0 4px 0 #c8efd4;
+  }
+  #total.pop { animation: pop 0.34s cubic-bezier(.2, 1.5, .4, 1); }
+  @keyframes pop {
+    0% { transform: scale(1); }
+    45% { transform: scale(1.16); }
+    100% { transform: scale(1); }
+  }
+  #say {
+    margin: 8px 0 0;
+    min-height: 3.2em;
+    text-align: center;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+  .stage {
+    margin-top: 8px;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 3px solid #241c16;
+    background: #d7f3ff;
+    touch-action: none;
+    user-select: none;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    touch-action: none;
+    cursor: crosshair;
+  }
+  .meter-label {
+    margin: 10px 0 6px;
+    font-size: 13px;
+    font-weight: 800;
+    color: #6d6256;
+  }
+  .meter {
+    height: 14px;
+    border: 3px solid #241c16;
+    border-radius: 999px;
+    overflow: hidden;
+    background: #fff;
+  }
+  .meter span {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: repeating-linear-gradient(90deg, #ffbf1a, #ffbf1a 10px, #ffe38a 10px, #ffe38a 20px);
+  }
+  button {
+    margin-top: 12px;
+    width: 100%;
+    min-height: 52px;
+    border-radius: 14px;
+    border: 3px solid #241c16;
+    background: #ff4f81;
+    color: #fff;
+    font: 800 18px "Trebuchet MS", "Segoe UI", sans-serif;
+    box-shadow: 0 4px 0 #241c16;
+    cursor: pointer;
+  }
+  button:hover { filter: brightness(1.05); }
+  button:active { transform: translateY(3px); box-shadow: 0 1px 0 #241c16; }
+  button:focus-visible, canvas:focus-visible {
+    outline: 3px solid #2f6fed;
+    outline-offset: 3px;
+  }
+  .hint {
+    margin: 10px 4px 0;
+    color: #4e453c;
+    font-size: 14px;
+    text-align: center;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .panel.shake, #total.pop { animation: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <main class="panel" id="panel">
+      <p class="eyebrow">Very serious finance</p>
+      <h1>Ball Bucks</h1>
+      <p class="score-label">Score</p>
+      <p id="total" data-total="0" aria-live="polite" aria-atomic="true">$0</p>
+      <p id="say">Scratch the cartoon balls. Finish a scratch and the score goes up by exactly $1.</p>
+      <div class="stage">
+        <canvas id="target" width="480" height="540" tabindex="0" aria-label="Silly cartoon of two round balls under a waistband. Scratch them to earn one dollar."></canvas>
+      </div>
+      <p class="meter-label" id="meterLabel">Scratch the balls</p>
+      <div class="meter" id="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Scratch progress">
+        <span id="bar"></span>
+      </div>
+      <button id="reset" type="button">Reset</button>
+      <p class="hint">Click and drag across the balls. On a phone, press and rub. Each finished scratch adds $1. Reset clears the score. These dollars are only a score.</p>
+    </main>
+  </div>
+<script>
+(() => {
+  const W = 480;
+  const H = 540;
+  const balls = [
+    { x: 170, y: 404, r: 90, color: "#ff8d6b" },
+    { x: 310, y: 404, r: 90, color: "#ffd15c" }
+  ];
+  const box = { x: 80, y: 314, w: 320, h: 180 };
+  const BRUSH = 42;
+  const COVER_TO_WIN = 0.36;
+  const COLS = 40;
+  const ROWS = 24;
+  const INK = "#241c16";
+
+  const canvas = document.getElementById("target");
+  const ctx = canvas.getContext("2d");
+  const foil = document.createElement("canvas");
+  const foilCtx = foil.getContext("2d");
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const panel = document.getElementById("panel");
+  const totalEl = document.getElementById("total");
+  const sayEl = document.getElementById("say");
+  const barEl = document.getElementById("bar");
+  const progressEl = document.getElementById("progress");
+  const meterLabel = document.getElementById("meterLabel");
+  const resetBtn = document.getElementById("reset");
+
+  const inside = new Uint8Array(COLS * ROWS);
+  const marked = new Uint8Array(COLS * ROWS);
+  let insideCount = 0;
+  let markedCount = 0;
+
+  let total = 0;
+  let accepting = true;
+  let scratching = false;
+  let last = null;
+  let round = 0;
+  let timer = 0;
+  let hop = 0;
+  let look = { x: 240, y: 404 };
+  let bubble = "Scratch?";
+  const sparkles = [];
+  const particles = [];
+  let floater = null;
+  let audio = null;
+
+  const wins = [
+    "One scratch. One dollar. They want a receipt.",
+    "Paid. They are extremely smug about it.",
+    "That's a buck. Do not tell the bank.",
+    "Cha-ching. The balls have a payroll now.",
+    "Exactly $1. They do not do IOUs."
+  ];
+
+  function setupCanvas(c, context) {
+    c.width = W * dpr;
+    c.height = H * dpr;
+    context.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  setupCanvas(canvas, ctx);
+  setupCanvas(foil, foilCtx);
+
+  function cellCenter(c, r) {
+    return {
+      x: box.x + (c + 0.5) * (box.w / COLS),
+      y: box.y + (r + 0.5) * (box.h / ROWS)
+    };
+  }
+
+  function inBall(x, y, shrink) {
+    for (let i = 0; i < balls.length; i++) {
+      const b = balls[i];
+      const dx = x - b.x;
+      const dy = y - b.y;
+      const rr = b.r * shrink;
+      if (dx * dx + dy * dy <= rr * rr) return true;
+    }
+    return false;
+  }
+
+  function buildInside() {
+    insideCount = 0;
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const p = cellCenter(c, r);
+        const inn = inBall(p.x, p.y, 0.9);
+        inside[r * COLS + c] = inn ? 1 : 0;
+        if (inn) insideCount++;
+      }
+    }
+  }
+
+  function clearMarks() {
+    marked.fill(0);
+    markedCount = 0;
+    updateMeter();
+  }
+
+  function updateMeter() {
+    const ratio = insideCount ? markedCount / insideCount : 0;
+    const pct = Math.max(0, Math.min(100, Math.round((ratio / COVER_TO_WIN) * 100)));
+    barEl.style.width = pct + "%";
+    progressEl.setAttribute("aria-valuenow", String(pct));
+    if (pct >= 100) meterLabel.textContent = "Paid";
+    else if (pct > 0) meterLabel.textContent = "Keep scratching";
+    else meterLabel.textContent = "Scratch the balls";
+  }
+
+  function renderTotal(pop) {
+    totalEl.dataset.total = String(total);
+    totalEl.textContent = "$" + total;
+    if (!pop) return;
+    totalEl.classList.remove("pop");
+    void totalEl.offsetWidth;
+    totalEl.classList.add("pop");
+  }
+
+  function say(text) { sayEl.textContent = text; }
+
+  function shake() {
+    panel.classList.remove("shake");
+    void panel.offsetWidth;
+    panel.classList.add("shake");
+  }
+
+  function chaching() {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    if (!audio) audio = new AC();
+    if (audio.state === "suspended") audio.resume();
+    [740, 1180].forEach((freq, i) => {
+      const t = audio.currentTime + i * 0.07;
+      const o = audio.createOscillator();
+      const g = audio.createGain();
+      o.type = "triangle";
+      o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.08, t + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+      o.connect(g);
+      g.connect(audio.destination);
+      o.start(t);
+      o.stop(t + 0.13);
+    });
+  }
+
+  function tracePair(context, inset) {
+    context.beginPath();
+    balls.forEach((b) => {
+      const r = b.r - inset;
+      context.moveTo(b.x + r, b.y);
+      context.arc(b.x, b.y, r, 0, Math.PI * 2);
+    });
+  }
+
+  function paintFoil() {
+    const f = foilCtx;
+    f.setTransform(dpr, 0, 0, dpr, 0, 0);
+    f.clearRect(0, 0, W, H);
+    f.save();
+    tracePair(f, 3);
+    f.clip();
+    const g = f.createLinearGradient(box.x, box.y, box.x + box.w, box.y + box.h);
+    g.addColorStop(0, "#f7f8fb");
+    g.addColorStop(0.45, "#c5ccd8");
+    g.addColorStop(0.52, "#ffffff");
+    g.addColorStop(1, "#8e98ab");
+    f.fillStyle = g;
+    f.fillRect(0, 0, W, H);
+    f.globalAlpha = 0.55;
+    f.strokeStyle = "#ffffff";
+    f.lineWidth = 2;
+    for (let i = -6; i < 18; i++) {
+      f.beginPath();
+      f.moveTo(box.x + i * 22, box.y - 20);
+      f.lineTo(box.x + i * 22 + 40, box.y + box.h + 20);
+      f.stroke();
+    }
+    f.globalAlpha = 1;
+    f.fillStyle = "#2d3648";
+    f.textAlign = "center";
+    f.textBaseline = "middle";
+    f.font = "800 28px Trebuchet MS, Segoe UI, sans-serif";
+    f.fillText("SCRATCH", 240, 392);
+    f.font = "700 15px Trebuchet MS, Segoe UI, sans-serif";
+    f.fillText("the balls", 240, 422);
+    f.restore();
+    clearMarks();
+  }
+
+  function markAt(x, y) {
+    const cw = box.w / COLS;
+    const rh = box.h / ROWS;
+    const c0 = Math.max(0, Math.floor((x - BRUSH - box.x) / cw));
+    const c1 = Math.min(COLS - 1, Math.floor((x + BRUSH - box.x) / cw));
+    const r0 = Math.max(0, Math.floor((y - BRUSH - box.y) / rh));
+    const r1 = Math.min(ROWS - 1, Math.floor((y + BRUSH - box.y) / rh));
+    const reach = BRUSH * BRUSH;
+    for (let r = r0; r <= r1; r++) {
+      for (let c = c0; c <= c1; c++) {
+        const i = r * COLS + c;
+        if (!inside[i] || marked[i]) continue;
+        const p = cellCenter(c, r);
+        const dx = p.x - x;
+        const dy = p.y - y;
+        if (dx * dx + dy * dy <= reach) {
+          marked[i] = 1;
+          markedCount++;
+        }
+      }
+    }
+  }
+
+  function scratchSegment(x0, y0, x1, y1) {
+    foilCtx.save();
+    foilCtx.globalCompositeOperation = "destination-out";
+    foilCtx.strokeStyle = "#000";
+    foilCtx.lineCap = "round";
+    foilCtx.lineJoin = "round";
+    foilCtx.lineWidth = BRUSH * 2;
+    foilCtx.beginPath();
+    foilCtx.moveTo(x0, y0);
+    foilCtx.lineTo(x1, y1);
+    foilCtx.stroke();
+    foilCtx.restore();
+
+    const dist = Math.hypot(x1 - x0, y1 - y0);
+    const steps = Math.max(1, Math.ceil(dist / (BRUSH * 0.45)));
+    for (let s = 0; s <= steps; s++) {
+      const t = s / steps;
+      const x = x0 + (x1 - x0) * t;
+      const y = y0 + (y1 - y0) * t;
+      markAt(x, y);
+      if (s % 2 === 0) {
+        sparkles.push({
+          x, y,
+          vx: (Math.random() - 0.5) * 1.4,
+          vy: -0.6 - Math.random() * 1.2,
+          life: 1,
+          r: 2 + Math.random() * 3
+        });
+      }
+    }
+    if (sparkles.length > 90) sparkles.splice(0, sparkles.length - 90);
+    updateMeter();
+    if (accepting && insideCount && markedCount / insideCount >= COVER_TO_WIN) completeScratch();
+  }
+
+  function completeScratch() {
+    if (!accepting) return;
+    accepting = false;
+    scratching = false;
+    last = null;
+    const token = ++round;
+    total += 1;
+    renderTotal(true);
+    shake();
+    chaching();
+    hop = 1;
+    bubble = "$1!";
+    say(wins[Math.floor(Math.random() * wins.length)] + " Score: $" + total + ".");
+    meterLabel.textContent = "Paid";
+    barEl.style.width = "100%";
+    progressEl.setAttribute("aria-valuenow", "100");
+    foilCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    foilCtx.clearRect(0, 0, W, H);
+    floater = { y: 300, life: 1 };
+    for (let i = 0; i < 28; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const s = 1.6 + Math.random() * 4.8;
+      particles.push({
+        x: 240,
+        y: 390,
+        vx: Math.cos(a) * s,
+        vy: Math.sin(a) * s - 2.4,
+        life: 1,
+        kind: i % 2 ? "coin" : "star",
+        rot: Math.random() * 6,
+        vr: (Math.random() - 0.5) * 0.28
+      });
+    }
+    timer = setTimeout(() => {
+      if (token !== round) return;
+      accepting = true;
+      paintFoil();
+      bubble = "Again?";
+      say("Foil's back. Same balls. Finish another scratch for another $1.");
+    }, 1100);
+  }
+
+  function resetAll() {
+    round++;
+    clearTimeout(timer);
+    total = 0;
+    renderTotal(false);
+    accepting = true;
+    scratching = false;
+    last = null;
+    hop = 0;
+    floater = null;
+    sparkles.length = 0;
+    particles.length = 0;
+    paintFoil();
+    bubble = "Zero!";
+    say("Score is $0. The foil is back on the balls.");
+  }
+
+  function pointerPos(e) {
+    const r = canvas.getBoundingClientRect();
+    return {
+      x: ((e.clientX - r.left) / r.width) * W,
+      y: ((e.clientY - r.top) / r.height) * H
+    };
+  }
+
+  canvas.addEventListener("pointerdown", (e) => {
+    if (!accepting) return;
+    if (e.button != null && e.button !== 0) return;
+    e.preventDefault();
+    scratching = true;
+    canvas.setPointerCapture(e.pointerId);
+    const p = pointerPos(e);
+    last = p;
+    look = p;
+    scratchSegment(p.x, p.y, p.x, p.y);
+  });
+  canvas.addEventListener("pointermove", (e) => {
+    const p = pointerPos(e);
+    look = p;
+    if (!scratching || !accepting) return;
+    e.preventDefault();
+    if (last) scratchSegment(last.x, last.y, p.x, p.y);
+    last = p;
+  });
+  function endStroke() {
+    scratching = false;
+    last = null;
+  }
+  canvas.addEventListener("pointerup", endStroke);
+  canvas.addEventListener("pointercancel", endStroke);
+  canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+  resetBtn.addEventListener("click", resetAll);
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function drawTiles() {
+    const s = 40;
+    for (let y = 0; y < H; y += s) {
+      for (let x = 0; x < W; x += s) {
+        ctx.fillStyle = ((x / s + y / s) % 2 === 0) ? "#e7f8ff" : "#c9ecf8";
+        ctx.fillRect(x, y, s, s);
+      }
+    }
+  }
+
+  function eye(x, y, r) {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = "#fff";
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = INK;
+    ctx.stroke();
+    const dx = look.x - x;
+    const dy = look.y - y;
+    const m = Math.hypot(dx, dy) || 1;
+    const px = x + (dx / m) * r * 0.35;
+    const py = y + (dy / m) * r * 0.35;
+    ctx.beginPath();
+    ctx.arc(px, py, r * 0.42, 0, Math.PI * 2);
+    ctx.fillStyle = INK;
+    ctx.fill();
+  }
+
+  function drawGuy() {
+    ctx.fillStyle = "#3d4f8f";
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.ellipse(240, 236, 150, 78, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "#ffd2b3";
+    ctx.beginPath();
+    ctx.arc(240, 132, 56, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "#3a2a22";
+    ctx.beginPath();
+    ctx.arc(240, 112, 56, Math.PI, 0);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(214, 156, 22, 10, -0.2, 0, Math.PI * 2);
+    ctx.ellipse(266, 156, 22, 10, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    eye(222, 128, 10);
+    eye(258, 128, 10);
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(240, 146, 10, 0.15 * Math.PI, 0.85 * Math.PI);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255, 110, 140, 0.55)";
+    ctx.beginPath();
+    ctx.ellipse(202, 146, 8, 5, 0, 0, Math.PI * 2);
+    ctx.ellipse(278, 146, 8, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawBand() {
+    ctx.fillStyle = "#2a3f86";
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 4;
+    roundRect(78, 268, 324, 34, 10);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#fff";
+    for (let x = 96; x < 390; x += 28) {
+      ctx.beginPath();
+      ctx.arc(x, 285, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function drawPrize(yOff, spread) {
+    balls.forEach((b, i) => {
+      const x = b.x + (i === 0 ? -spread : spread);
+      const y = b.y + yOff;
+      ctx.beginPath();
+      ctx.arc(x, y, b.r, 0, Math.PI * 2);
+      ctx.fillStyle = b.color;
+      ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.7)";
+      ctx.beginPath();
+      ctx.ellipse(x - 24, y - 28, 18, 10, -0.7, 0, Math.PI * 2);
+      ctx.fill();
+      eye(x - 18, y - 6, 8);
+      eye(x + 16, y - 8, 9);
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(x, y + 14, 14, 0.15 * Math.PI, 0.85 * Math.PI);
+      ctx.stroke();
+      ctx.fillStyle = "rgba(255, 90, 120, 0.45)";
+      ctx.beginPath();
+      ctx.ellipse(x - 32, y + 12, 8, 5, 0, 0, Math.PI * 2);
+      ctx.ellipse(x + 30, y + 12, 8, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.fillStyle = "#178a45";
+    ctx.font = "900 28px Trebuchet MS, Segoe UI, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("$1", 240, 404 + yOff);
+  }
+
+  function drawRims(yOff, spread) {
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 5;
+    balls.forEach((b, i) => {
+      const x = b.x + (i === 0 ? -spread : spread);
+      ctx.beginPath();
+      ctx.arc(x, b.y + yOff, b.r, 0, Math.PI * 2);
+      ctx.stroke();
+    });
+  }
+
+  function drawBubble() {
+    roundRect(16, 14, 132, 44, 14);
+    ctx.fillStyle = "#fff";
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = INK;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(120, 54);
+    ctx.lineTo(168, 86);
+    ctx.lineTo(108, 56);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = INK;
+    ctx.font = "800 16px Trebuchet MS, Segoe UI, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(bubble, 82, 36);
+  }
+
+  function drawSparkles() {
+    for (let i = sparkles.length - 1; i >= 0; i--) {
+      const s = sparkles[i];
+      s.x += s.vx;
+      s.y += s.vy;
+      s.life -= 0.04;
+      if (s.life <= 0) {
+        sparkles.splice(i, 1);
+        continue;
+      }
+      ctx.globalAlpha = Math.max(0, s.life);
+      ctx.fillStyle = "#fff7c8";
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function drawParticles() {
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.12;
+      p.rot += p.vr;
+      p.life -= 0.012;
+      if (p.life <= 0) {
+        particles.splice(i, 1);
+        continue;
+      }
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      if (p.kind === "coin") {
+        ctx.fillStyle = "#ffd34a";
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 9, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#a86400";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = "#fff";
+        ctx.beginPath();
+        for (let k = 0; k < 5; k++) {
+          const a = -Math.PI / 2 + k * (Math.PI * 2 / 5);
+          const cmd = k === 0 ? "moveTo" : "lineTo";
+          ctx[cmd](Math.cos(a) * 8, Math.sin(a) * 8);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+    if (!floater) return;
+    floater.y -= 0.7;
+    floater.life -= 0.013;
+    if (floater.life <= 0) {
+      floater = null;
+      return;
+    }
+    ctx.globalAlpha = Math.max(0, floater.life);
+    ctx.fillStyle = "#178a45";
+    ctx.font = "900 42px Trebuchet MS, Segoe UI, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("+$1", 240, floater.y);
+    ctx.globalAlpha = 1;
+  }
+
+  function frame() {
+    if (hop > 0) hop = Math.max(0, hop - 0.02);
+    const bounce = Math.sin(hop * Math.PI) * 14;
+    const spread = Math.sin(hop * Math.PI) * 8;
+    ctx.clearRect(0, 0, W, H);
+    drawTiles();
+    drawGuy();
+    drawBand();
+    drawPrize(-bounce, spread);
+    if (spread < 1) ctx.drawImage(foil, 0, 0, W, H);
+    drawRims(-bounce, spread);
+    drawBubble();
+    drawSparkles();
+    drawParticles();
+    requestAnimationFrame(frame);
+  }
+
+  buildInside();
+  paintFoil();
+  renderTotal(false);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
