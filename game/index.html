@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Honk Lotto</title>
+<title>Ball Bucks</title>
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
@@ -11,10 +11,9 @@
     margin: 0;
     min-height: 100dvh;
     background:
-      radial-gradient(circle at 12% 18%, #fff 0 18px, transparent 20px),
-      radial-gradient(circle at 22% 14%, #fff 0 28px, transparent 30px),
-      radial-gradient(circle at 80% 8%, #fff 0 22px, transparent 24px),
-      linear-gradient(#8fd4ff, #fff3c9 58%, #ffd7a1);
+      radial-gradient(circle at 12% 16%, #fff 0 16px, transparent 18px),
+      radial-gradient(circle at 78% 10%, #fff 0 22px, transparent 24px),
+      linear-gradient(#ffe38a, #fff6e8 46%, #ffd0c2);
     color: #241c16;
     font-family: "Trebuchet MS", "Segoe UI", sans-serif;
   }
@@ -88,7 +87,7 @@
     border-radius: 18px;
     overflow: hidden;
     border: 3px solid #241c16;
-    background: #b9e6ff;
+    background: #d7f3ff;
     touch-action: none;
     user-select: none;
   }
@@ -150,34 +149,38 @@
 <body>
   <div class="wrap">
     <main class="panel" id="panel">
-      <p class="eyebrow">Absurd poultry finance</p>
-      <h1>Honk Lotto</h1>
+      <p class="eyebrow">Very serious finance</p>
+      <h1>Ball Bucks</h1>
       <p class="score-label">Score</p>
       <p id="total" data-total="0" aria-live="polite" aria-atomic="true">$0</p>
-      <p id="say">Scratch the silver egg. Finish a scratch and the goose pays exactly $1.</p>
+      <p id="say">Scratch the cartoon balls. Finish a scratch and the score goes up by exactly $1.</p>
       <div class="stage">
-        <canvas id="egg" width="480" height="540" tabindex="0" aria-label="Cartoon goose sitting on a silver egg. Scratch the egg to earn one dollar."></canvas>
+        <canvas id="target" width="480" height="540" tabindex="0" aria-label="Silly cartoon of two round balls under a waistband. Scratch them to earn one dollar."></canvas>
       </div>
-      <p class="meter-label" id="meterLabel">Scratch the egg</p>
+      <p class="meter-label" id="meterLabel">Scratch the balls</p>
       <div class="meter" id="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Scratch progress">
         <span id="bar"></span>
       </div>
       <button id="reset" type="button">Reset</button>
-      <p class="hint">Click and drag across the egg. On a phone, press and rub. Each finished scratch adds $1. Reset clears the score. These dollars are only a score.</p>
+      <p class="hint">Click and drag across the balls. On a phone, press and rub. Each finished scratch adds $1. Reset clears the score. These dollars are only a score.</p>
     </main>
   </div>
 <script>
 (() => {
   const W = 480;
   const H = 540;
-  const egg = { cx: 240, cy: 408, rx: 156, ry: 108 };
-  const BRUSH = 38;
-  const COVER_TO_WIN = 0.34;
+  const balls = [
+    { x: 170, y: 404, r: 90, color: "#ff8d6b" },
+    { x: 310, y: 404, r: 90, color: "#ffd15c" }
+  ];
+  const box = { x: 80, y: 314, w: 320, h: 180 };
+  const BRUSH = 42;
+  const COVER_TO_WIN = 0.36;
   const COLS = 40;
-  const ROWS = 28;
+  const ROWS = 24;
   const INK = "#241c16";
 
-  const canvas = document.getElementById("egg");
+  const canvas = document.getElementById("target");
   const ctx = canvas.getContext("2d");
   const foil = document.createElement("canvas");
   const foilCtx = foil.getContext("2d");
@@ -202,7 +205,7 @@
   let round = 0;
   let timer = 0;
   let hop = 0;
-  let look = { x: egg.cx, y: egg.cy - 40 };
+  let look = { x: 240, y: 404 };
   let bubble = "Scratch?";
   const sparkles = [];
   const particles = [];
@@ -210,11 +213,11 @@
   let audio = null;
 
   const wins = [
-    "HONK. That's one dollar.",
-    "The egg was insured. For a dollar.",
-    "Spend it all in one place. There is one place.",
-    "Economists just felt a chill.",
-    "Whole dollars only. The goose ate the cents."
+    "One scratch. One dollar. They want a receipt.",
+    "Paid. They are extremely smug about it.",
+    "That's a buck. Do not tell the bank.",
+    "Cha-ching. The balls have a payroll now.",
+    "Exactly $1. They do not do IOUs."
   ];
 
   function setupCanvas(c, context) {
@@ -227,9 +230,20 @@
 
   function cellCenter(c, r) {
     return {
-      x: egg.cx - egg.rx + (c + 0.5) * (egg.rx * 2 / COLS),
-      y: egg.cy - egg.ry + (r + 0.5) * (egg.ry * 2 / ROWS)
+      x: box.x + (c + 0.5) * (box.w / COLS),
+      y: box.y + (r + 0.5) * (box.h / ROWS)
     };
+  }
+
+  function inBall(x, y, shrink) {
+    for (let i = 0; i < balls.length; i++) {
+      const b = balls[i];
+      const dx = x - b.x;
+      const dy = y - b.y;
+      const rr = b.r * shrink;
+      if (dx * dx + dy * dy <= rr * rr) return true;
+    }
+    return false;
   }
 
   function buildInside() {
@@ -237,9 +251,7 @@
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
         const p = cellCenter(c, r);
-        const nx = (p.x - egg.cx) / egg.rx;
-        const ny = (p.y - egg.cy) / egg.ry;
-        const inn = nx * nx + ny * ny <= 0.9 * 0.9;
+        const inn = inBall(p.x, p.y, 0.9);
         inside[r * COLS + c] = inn ? 1 : 0;
         if (inn) insideCount++;
       }
@@ -259,7 +271,7 @@
     progressEl.setAttribute("aria-valuenow", String(pct));
     if (pct >= 100) meterLabel.textContent = "Paid";
     else if (pct > 0) meterLabel.textContent = "Keep scratching";
-    else meterLabel.textContent = "Scratch the egg";
+    else meterLabel.textContent = "Scratch the balls";
   }
 
   function renderTotal(pop) {
@@ -279,31 +291,34 @@
     panel.classList.add("shake");
   }
 
-  function honk() {
+  function chaching() {
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
     if (!audio) audio = new AC();
     if (audio.state === "suspended") audio.resume();
-    const t = audio.currentTime;
-    const o = audio.createOscillator();
-    const o2 = audio.createOscillator();
-    const g = audio.createGain();
-    o.type = "triangle";
-    o2.type = "square";
-    o.frequency.setValueAtTime(680, t);
-    o.frequency.exponentialRampToValueAtTime(210, t + 0.18);
-    o2.frequency.setValueAtTime(340, t);
-    o2.frequency.exponentialRampToValueAtTime(120, t + 0.18);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.08, t + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
-    o.connect(g);
-    o2.connect(g);
-    g.connect(audio.destination);
-    o.start(t);
-    o2.start(t);
-    o.stop(t + 0.24);
-    o2.stop(t + 0.24);
+    [740, 1180].forEach((freq, i) => {
+      const t = audio.currentTime + i * 0.07;
+      const o = audio.createOscillator();
+      const g = audio.createGain();
+      o.type = "triangle";
+      o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.08, t + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+      o.connect(g);
+      g.connect(audio.destination);
+      o.start(t);
+      o.stop(t + 0.13);
+    });
+  }
+
+  function tracePair(context, inset) {
+    context.beginPath();
+    balls.forEach((b) => {
+      const r = b.r - inset;
+      context.moveTo(b.x + r, b.y);
+      context.arc(b.x, b.y, r, 0, Math.PI * 2);
+    });
   }
 
   function paintFoil() {
@@ -311,23 +326,22 @@
     f.setTransform(dpr, 0, 0, dpr, 0, 0);
     f.clearRect(0, 0, W, H);
     f.save();
-    f.beginPath();
-    f.ellipse(egg.cx, egg.cy, egg.rx - 3, egg.ry - 3, 0, 0, Math.PI * 2);
+    tracePair(f, 3);
     f.clip();
-    const g = f.createLinearGradient(egg.cx - egg.rx, egg.cy - egg.ry, egg.cx + egg.rx, egg.cy + egg.ry);
-    g.addColorStop(0, "#f4f7fb");
-    g.addColorStop(0.42, "#c5ccd8");
-    g.addColorStop(0.5, "#ffffff");
+    const g = f.createLinearGradient(box.x, box.y, box.x + box.w, box.y + box.h);
+    g.addColorStop(0, "#f7f8fb");
+    g.addColorStop(0.45, "#c5ccd8");
+    g.addColorStop(0.52, "#ffffff");
     g.addColorStop(1, "#8e98ab");
     f.fillStyle = g;
     f.fillRect(0, 0, W, H);
     f.globalAlpha = 0.55;
     f.strokeStyle = "#ffffff";
     f.lineWidth = 2;
-    for (let i = -10; i < 18; i++) {
+    for (let i = -6; i < 18; i++) {
       f.beginPath();
-      f.moveTo(egg.cx - egg.rx + i * 24, egg.cy - egg.ry - 10);
-      f.lineTo(egg.cx - egg.rx + i * 24 + 48, egg.cy + egg.ry + 10);
+      f.moveTo(box.x + i * 22, box.y - 20);
+      f.lineTo(box.x + i * 22 + 40, box.y + box.h + 20);
       f.stroke();
     }
     f.globalAlpha = 1;
@@ -335,22 +349,20 @@
     f.textAlign = "center";
     f.textBaseline = "middle";
     f.font = "800 28px Trebuchet MS, Segoe UI, sans-serif";
-    f.fillText("SCRATCH", egg.cx, egg.cy - 10);
+    f.fillText("SCRATCH", 240, 392);
     f.font = "700 15px Trebuchet MS, Segoe UI, sans-serif";
-    f.fillText("the fancy egg", egg.cx, egg.cy + 20);
+    f.fillText("the balls", 240, 422);
     f.restore();
     clearMarks();
   }
 
   function markAt(x, y) {
-    const left = egg.cx - egg.rx;
-    const top = egg.cy - egg.ry;
-    const cw = (egg.rx * 2) / COLS;
-    const rh = (egg.ry * 2) / ROWS;
-    const c0 = Math.max(0, Math.floor((x - BRUSH - left) / cw));
-    const c1 = Math.min(COLS - 1, Math.floor((x + BRUSH - left) / cw));
-    const r0 = Math.max(0, Math.floor((y - BRUSH - top) / rh));
-    const r1 = Math.min(ROWS - 1, Math.floor((y + BRUSH - top) / rh));
+    const cw = box.w / COLS;
+    const rh = box.h / ROWS;
+    const c0 = Math.max(0, Math.floor((x - BRUSH - box.x) / cw));
+    const c1 = Math.min(COLS - 1, Math.floor((x + BRUSH - box.x) / cw));
+    const r0 = Math.max(0, Math.floor((y - BRUSH - box.y) / rh));
+    const r1 = Math.min(ROWS - 1, Math.floor((y + BRUSH - box.y) / rh));
     const reach = BRUSH * BRUSH;
     for (let r = r0; r <= r1; r++) {
       for (let c = c0; c <= c1; c++) {
@@ -411,26 +423,26 @@
     total += 1;
     renderTotal(true);
     shake();
-    honk();
+    chaching();
     hop = 1;
-    bubble = "HONK!";
+    bubble = "$1!";
     say(wins[Math.floor(Math.random() * wins.length)] + " Score: $" + total + ".");
     meterLabel.textContent = "Paid";
     barEl.style.width = "100%";
     progressEl.setAttribute("aria-valuenow", "100");
     foilCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
     foilCtx.clearRect(0, 0, W, H);
-    floater = { y: egg.cy - 78, life: 1 };
+    floater = { y: 300, life: 1 };
     for (let i = 0; i < 28; i++) {
       const a = Math.random() * Math.PI * 2;
       const s = 1.6 + Math.random() * 4.8;
       particles.push({
-        x: egg.cx,
-        y: egg.cy,
+        x: 240,
+        y: 390,
         vx: Math.cos(a) * s,
         vy: Math.sin(a) * s - 2.4,
         life: 1,
-        kind: i % 2 ? "coin" : "feather",
+        kind: i % 2 ? "coin" : "star",
         rot: Math.random() * 6,
         vr: (Math.random() - 0.5) * 0.28
       });
@@ -440,7 +452,7 @@
       accepting = true;
       paintFoil();
       bubble = "Again?";
-      say("New egg. Same goose. Finish another scratch for another $1.");
+      say("Foil's back. Same balls. Finish another scratch for another $1.");
     }, 1100);
   }
 
@@ -458,7 +470,7 @@
     particles.length = 0;
     paintFoil();
     bubble = "Zero!";
-    say("Score is $0. The egg is wrapped again.");
+    say("Score is $0. The foil is back on the balls.");
   }
 
   function pointerPos(e) {
@@ -497,203 +509,6 @@
   canvas.addEventListener("contextmenu", (e) => e.preventDefault());
   resetBtn.addEventListener("click", resetAll);
 
-  function blob(x, y, rx, ry, fill, rot) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(rot || 0);
-    ctx.beginPath();
-    ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
-    ctx.fillStyle = fill;
-    ctx.fill();
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = INK;
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  function drawBackdrop() {
-    ctx.fillStyle = "rgba(255,255,255,0.9)";
-    [[70, 54, 1], [300, 36, 0.8], [400, 78, 0.7]].forEach(([x, y, s]) => {
-      ctx.beginPath();
-      ctx.arc(x, y, 16 * s, 0, Math.PI * 2);
-      ctx.arc(x + 20 * s, y - 6 * s, 20 * s, 0, Math.PI * 2);
-      ctx.arc(x + 42 * s, y, 14 * s, 0, Math.PI * 2);
-      ctx.fill();
-    });
-    ctx.fillStyle = "#7dce63";
-    ctx.beginPath();
-    ctx.ellipse(240, 512, 280, 78, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#b6ee8e";
-    ctx.beginPath();
-    ctx.ellipse(240, 498, 230, 46, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  function drawGoose(yOff) {
-    const y = yOff;
-    ctx.strokeStyle = INK;
-    ctx.lineJoin = "round";
-    ctx.lineCap = "round";
-    ctx.fillStyle = "#fffdf7";
-    ctx.beginPath();
-    ctx.moveTo(150, 250 + y);
-    ctx.quadraticCurveTo(90, 230 + y, 120, 200 + y);
-    ctx.quadraticCurveTo(130, 240 + y, 168, 246 + y);
-    ctx.fill();
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(146, 286 + y);
-    ctx.quadraticCurveTo(78, 300 + y, 118, 328 + y);
-    ctx.quadraticCurveTo(140, 300 + y, 170, 292 + y);
-    ctx.fill();
-    ctx.stroke();
-
-    blob(214, 286 + y, 112, 70, "#fffdf7");
-    blob(196, 292 + y, 52, 30, "#f4efe4", -0.5);
-    ctx.strokeStyle = INK;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(168, 286 + y);
-    ctx.quadraticCurveTo(196, 276 + y, 230, 292 + y);
-    ctx.moveTo(172, 302 + y);
-    ctx.quadraticCurveTo(200, 294 + y, 228, 306 + y);
-    ctx.stroke();
-
-    ctx.fillStyle = "#fffdf7";
-    ctx.strokeStyle = INK;
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(268, 250 + y);
-    ctx.quadraticCurveTo(330, 210 + y, 318, 150 + y);
-    ctx.lineTo(300, 156 + y);
-    ctx.quadraticCurveTo(300, 214 + y, 250, 262 + y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    blob(312, 132 + y, 40, 36, "#fffdf7");
-    ctx.fillStyle = "#ff9a1f";
-    ctx.beginPath();
-    ctx.moveTo(338, 124 + y);
-    ctx.lineTo(398, 136 + y);
-    ctx.lineTo(338, 152 + y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(344, 138 + y);
-    ctx.lineTo(388, 140 + y);
-    ctx.stroke();
-
-    ctx.fillStyle = "#ff4f81";
-    function bowHalf(sign) {
-      ctx.beginPath();
-      ctx.moveTo(286, 176 + y);
-      ctx.lineTo(286 + sign * 26, 160 + y);
-      ctx.lineTo(286 + sign * 20, 192 + y);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-    }
-    bowHalf(-1);
-    bowHalf(1);
-    ctx.fillStyle = "#ffd0e2";
-    ctx.beginPath();
-    ctx.arc(286, 176 + y, 7, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.fillStyle = "rgba(255, 122, 150, 0.7)";
-    ctx.beginPath();
-    ctx.ellipse(286, 146 + y, 8, 5, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    function eye(x, yy, r) {
-      ctx.beginPath();
-      ctx.arc(x, yy, r, 0, Math.PI * 2);
-      ctx.fillStyle = "#fff";
-      ctx.fill();
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = INK;
-      ctx.stroke();
-      const dx = look.x - x;
-      const dy = look.y - yy;
-      const m = Math.hypot(dx, dy) || 1;
-      const px = x + (dx / m) * r * 0.38;
-      const py = yy + (dy / m) * r * 0.38;
-      ctx.beginPath();
-      ctx.arc(px, py, r * 0.45, 0, Math.PI * 2);
-      ctx.fillStyle = INK;
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(px - r * 0.16, py - r * 0.18, r * 0.16, 0, Math.PI * 2);
-      ctx.fillStyle = "#fff";
-      ctx.fill();
-    }
-    eye(298, 124 + y, 11);
-    eye(326, 120 + y, 13);
-
-    ctx.fillStyle = "#fffdf7";
-    ctx.beginPath();
-    ctx.ellipse(300, 100 + y, 8, 16, -0.4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-  }
-
-  function drawFeet() {
-    ctx.strokeStyle = "#ff9a1f";
-    ctx.lineWidth = 5;
-    ctx.lineCap = "round";
-    [[188, 470], [292, 474]].forEach(([x, y]) => {
-      ctx.beginPath();
-      ctx.moveTo(x, y - 18);
-      ctx.lineTo(x, y);
-      ctx.moveTo(x, y);
-      ctx.lineTo(x - 16, y + 8);
-      ctx.moveTo(x, y);
-      ctx.lineTo(x, y + 12);
-      ctx.moveTo(x, y);
-      ctx.lineTo(x + 16, y + 8);
-      ctx.stroke();
-    });
-  }
-
-  function drawPrize() {
-    ctx.save();
-    ctx.beginPath();
-    ctx.ellipse(egg.cx, egg.cy, egg.rx, egg.ry, 0, 0, Math.PI * 2);
-    ctx.clip();
-    const g = ctx.createLinearGradient(egg.cx, egg.cy - egg.ry, egg.cx, egg.cy + egg.ry);
-    g.addColorStop(0, "#ffe792");
-    g.addColorStop(1, "#f0a020");
-    ctx.fillStyle = g;
-    ctx.fillRect(egg.cx - egg.rx, egg.cy - egg.ry, egg.rx * 2, egg.ry * 2);
-    ctx.beginPath();
-    ctx.arc(egg.cx, egg.cy - 4, 52, 0, Math.PI * 2);
-    ctx.fillStyle = "#fff8dc";
-    ctx.fill();
-    ctx.lineWidth = 6;
-    ctx.strokeStyle = "#e09412";
-    ctx.stroke();
-    ctx.fillStyle = "#a86400";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.font = "900 48px Trebuchet MS, Segoe UI, sans-serif";
-    ctx.fillText("$1", egg.cx, egg.cy - 2);
-    ctx.font = "800 13px Trebuchet MS, Segoe UI, sans-serif";
-    ctx.fillText("ONE GOOSE BUCK", egg.cx, egg.cy + 74);
-    ctx.restore();
-  }
-
-  function drawRim() {
-    ctx.beginPath();
-    ctx.ellipse(egg.cx, egg.cy, egg.rx, egg.ry, 0, 0, Math.PI * 2);
-    ctx.lineWidth = 5;
-    ctx.strokeStyle = INK;
-    ctx.stroke();
-  }
-
   function roundRect(x, y, w, h, r) {
     ctx.beginPath();
     ctx.moveTo(x + r, y);
@@ -704,25 +519,150 @@
     ctx.closePath();
   }
 
+  function drawTiles() {
+    const s = 40;
+    for (let y = 0; y < H; y += s) {
+      for (let x = 0; x < W; x += s) {
+        ctx.fillStyle = ((x / s + y / s) % 2 === 0) ? "#e7f8ff" : "#c9ecf8";
+        ctx.fillRect(x, y, s, s);
+      }
+    }
+  }
+
+  function eye(x, y, r) {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = "#fff";
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = INK;
+    ctx.stroke();
+    const dx = look.x - x;
+    const dy = look.y - y;
+    const m = Math.hypot(dx, dy) || 1;
+    const px = x + (dx / m) * r * 0.35;
+    const py = y + (dy / m) * r * 0.35;
+    ctx.beginPath();
+    ctx.arc(px, py, r * 0.42, 0, Math.PI * 2);
+    ctx.fillStyle = INK;
+    ctx.fill();
+  }
+
+  function drawGuy() {
+    ctx.fillStyle = "#3d4f8f";
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.ellipse(240, 236, 150, 78, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "#ffd2b3";
+    ctx.beginPath();
+    ctx.arc(240, 132, 56, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "#3a2a22";
+    ctx.beginPath();
+    ctx.arc(240, 112, 56, Math.PI, 0);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(214, 156, 22, 10, -0.2, 0, Math.PI * 2);
+    ctx.ellipse(266, 156, 22, 10, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    eye(222, 128, 10);
+    eye(258, 128, 10);
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(240, 146, 10, 0.15 * Math.PI, 0.85 * Math.PI);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255, 110, 140, 0.55)";
+    ctx.beginPath();
+    ctx.ellipse(202, 146, 8, 5, 0, 0, Math.PI * 2);
+    ctx.ellipse(278, 146, 8, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawBand() {
+    ctx.fillStyle = "#2a3f86";
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 4;
+    roundRect(78, 268, 324, 34, 10);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#fff";
+    for (let x = 96; x < 390; x += 28) {
+      ctx.beginPath();
+      ctx.arc(x, 285, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function drawPrize(yOff, spread) {
+    balls.forEach((b, i) => {
+      const x = b.x + (i === 0 ? -spread : spread);
+      const y = b.y + yOff;
+      ctx.beginPath();
+      ctx.arc(x, y, b.r, 0, Math.PI * 2);
+      ctx.fillStyle = b.color;
+      ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.7)";
+      ctx.beginPath();
+      ctx.ellipse(x - 24, y - 28, 18, 10, -0.7, 0, Math.PI * 2);
+      ctx.fill();
+      eye(x - 18, y - 6, 8);
+      eye(x + 16, y - 8, 9);
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(x, y + 14, 14, 0.15 * Math.PI, 0.85 * Math.PI);
+      ctx.stroke();
+      ctx.fillStyle = "rgba(255, 90, 120, 0.45)";
+      ctx.beginPath();
+      ctx.ellipse(x - 32, y + 12, 8, 5, 0, 0, Math.PI * 2);
+      ctx.ellipse(x + 30, y + 12, 8, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.fillStyle = "#178a45";
+    ctx.font = "900 28px Trebuchet MS, Segoe UI, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("$1", 240, 404 + yOff);
+  }
+
+  function drawRims(yOff, spread) {
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 5;
+    balls.forEach((b, i) => {
+      const x = b.x + (i === 0 ? -spread : spread);
+      ctx.beginPath();
+      ctx.arc(x, b.y + yOff, b.r, 0, Math.PI * 2);
+      ctx.stroke();
+    });
+  }
+
   function drawBubble() {
-    roundRect(18, 16, 150, 48, 16);
+    roundRect(16, 14, 132, 44, 14);
     ctx.fillStyle = "#fff";
     ctx.fill();
     ctx.lineWidth = 3;
     ctx.strokeStyle = INK;
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(132, 60);
-    ctx.lineTo(176, 92);
-    ctx.lineTo(118, 62);
+    ctx.moveTo(120, 54);
+    ctx.lineTo(168, 86);
+    ctx.lineTo(108, 56);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
     ctx.fillStyle = INK;
-    ctx.font = "800 18px Trebuchet MS, Segoe UI, sans-serif";
+    ctx.font = "800 16px Trebuchet MS, Segoe UI, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(bubble, 93, 40);
+    ctx.fillText(bubble, 82, 36);
   }
 
   function drawSparkles() {
@@ -771,7 +711,12 @@
       } else {
         ctx.fillStyle = "#fff";
         ctx.beginPath();
-        ctx.ellipse(0, 0, 8, 3.5, 0, 0, Math.PI * 2);
+        for (let k = 0; k < 5; k++) {
+          const a = -Math.PI / 2 + k * (Math.PI * 2 / 5);
+          const cmd = k === 0 ? "moveTo" : "lineTo";
+          ctx[cmd](Math.cos(a) * 8, Math.sin(a) * 8);
+        }
+        ctx.closePath();
         ctx.fill();
         ctx.strokeStyle = INK;
         ctx.lineWidth = 1.5;
@@ -780,8 +725,8 @@
       ctx.restore();
     }
     if (!floater) return;
-    floater.y -= 0.8;
-    floater.life -= 0.014;
+    floater.y -= 0.7;
+    floater.life -= 0.013;
     if (floater.life <= 0) {
       floater = null;
       return;
@@ -791,20 +736,21 @@
     ctx.font = "900 42px Trebuchet MS, Segoe UI, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("+$1", egg.cx, floater.y);
+    ctx.fillText("+$1", 240, floater.y);
     ctx.globalAlpha = 1;
   }
 
   function frame() {
-    if (hop > 0) hop = Math.max(0, hop - 0.018);
-    const yOff = -Math.sin(hop * Math.PI) * 26;
+    if (hop > 0) hop = Math.max(0, hop - 0.02);
+    const bounce = Math.sin(hop * Math.PI) * 14;
+    const spread = Math.sin(hop * Math.PI) * 8;
     ctx.clearRect(0, 0, W, H);
-    drawBackdrop();
-    drawGoose(yOff);
-    drawFeet();
-    drawPrize();
-    ctx.drawImage(foil, 0, 0, W, H);
-    drawRim();
+    drawTiles();
+    drawGuy();
+    drawBand();
+    drawPrize(-bounce, spread);
+    if (spread < 1) ctx.drawImage(foil, 0, 0, W, H);
+    drawRims(-bounce, spread);
     drawBubble();
     drawSparkles();
     drawParticles();
